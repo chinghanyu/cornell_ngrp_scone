@@ -378,6 +378,10 @@ void* dijkstra_thread(void* arg) {
 		wake_up_time.tv_nsec = now.tv_usec + 1000;
 
 		result = pthread_cond_timedwait(rs->dijkstra_cond, rs->dijkstra_mutex, &wake_up_time);
+		
+//		gettimeofday(&now, NULL);
+//		printf("or_dijkstra.c: result = %d at %d\n", result, now.tv_sec);
+
 		/* if we timed out, and the data is not dirty, go back to sleep */
 		if (result == ETIMEDOUT) {
 			if (!rs->dijkstra_dirty) {
