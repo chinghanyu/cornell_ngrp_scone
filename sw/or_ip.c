@@ -85,6 +85,17 @@ void process_ip_packet(struct sr_instance* sr, const uint8_t * packet, unsigned 
 		char next_hop_iface[IF_LEN];
 		bzero(next_hop_iface, IF_LEN);
 
+		char iface0[IF_LEN], iface1[IF_LEN], iface2[IF_LEN], iface3[IF_LEN];
+		struct in_addr addr0, addr1, addr2, addr3;
+
+		strcpy(iface0, "eth0");
+		strcpy(iface1, "eth1");
+		strcpy(iface2, "eth2");
+		strcpy(iface3, "eth3");
+
+		inet_aton("192.168.1.2", &(addr1));
+		inet_aton("192.168.2.2", &(addr2));
+		inet_aton("192.168.3.2", &(addr3));
 
 		/* is there an entry in our routing table for the destination? */
 		if(get_next_hop(&next_hop, next_hop_iface, IF_LEN,
@@ -148,8 +159,21 @@ void process_ip_packet(struct sr_instance* sr, const uint8_t * packet, unsigned 
 				 	uint8_t* packet_copy = (uint8_t*)malloc(len);
 				 	memcpy(packet_copy, packet, len);
 
+					if(next_hop.s_addr == addr1.s_addr) {
+						if(rand() < 0.67 * RAND_MAX) {
+							send_ip(sr, packet_copy, len, &(addr1), iface1);
+//							printf("or_ip.c: an IP packet is forwarded to 192.168.1.2 through %s\n", iface1);
+						} else {
+							send_ip(sr, packet_copy, len, &(addr2), iface2);
+//							printf("or_ip.c: an IP packet is forwarded to 192.168.2.2 through %s\n", iface2);
+						}
+					} else {
+						send_ip(sr, packet_copy, len, &(next_hop), next_hop_iface);
+//						printf("or_ip.c: an IP packet is forwarded to %s\n", next_hop_iface);
+					}
 					/* forward packet out the next hop interface */
-					send_ip(sr, packet_copy, len, &(next_hop), next_hop_iface);
+//					send_ip(sr, packet_copy, len, &(next_hop), next_hop_iface);
+//					printf("or_ip.c: an IP packet is forwarded to %s\n", next_hop_iface);
 				}
 			} /* end of strncmp(interface ... */
 		} /* end of if(get_next_hop) */
