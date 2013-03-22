@@ -624,6 +624,8 @@ int populate_pwospf_router_interface_list(pwospf_router *router, uint8_t *packet
 			new_iface_list_entry->mask.s_addr =  next_packet_adv->pwospf_mask.s_addr;
 			new_iface_list_entry->router_id = next_packet_adv->pwospf_rid;
 			new_iface_list_entry->is_active = 0;
+			new_iface_list_entry->rx_rate = next_packet_adv->ngrp_rx_rate;
+			new_iface_list_entry->tx_rate = next_packet_adv->ngrp_tx_rate;
 
 
 			/* insert the new adv into the list */
@@ -658,7 +660,9 @@ int populate_pwospf_router_interface_list(pwospf_router *router, uint8_t *packet
 				/* Compare this entries subnet & mask to the pckt adv */
 				if( (interface_list_entry->subnet.s_addr == (next_packet_adv->pwospf_sub.s_addr & next_packet_adv->pwospf_mask.s_addr)) &&
 				    (interface_list_entry->mask.s_addr == next_packet_adv->pwospf_mask.s_addr) &&
-				    interface_list_entry->router_id == next_packet_adv->pwospf_rid) {
+				    (interface_list_entry->router_id == next_packet_adv->pwospf_rid) && 
+				    (interface_list_entry->rx_rate == next_packet_adv->ngrp_rx_rate) &&
+				    (interface_list_entry->tx_rate == next_packet_adv->ngrp_tx_rate)) {
 
 					is_new_adv = 0;
 					break;
@@ -680,6 +684,8 @@ int populate_pwospf_router_interface_list(pwospf_router *router, uint8_t *packet
 				new_iface_list_entry->mask.s_addr =  next_packet_adv->pwospf_mask.s_addr;
 				new_iface_list_entry->router_id = next_packet_adv->pwospf_rid;
 				new_iface_list_entry->is_active = 0;
+				new_iface_list_entry->rx_rate = next_packet_adv->ngrp_rx_rate;
+				new_iface_list_entry->tx_rate = next_packet_adv->ngrp_tx_rate;
 
 
 				/* insert the new adv into the list */
@@ -709,7 +715,9 @@ int populate_pwospf_router_interface_list(pwospf_router *router, uint8_t *packet
 				/* Compare this entries subnet & mask to the pckt adv */
 				if ((interface_list_entry->subnet.s_addr == (next_packet_adv->pwospf_sub.s_addr & next_packet_adv->pwospf_mask.s_addr)) &&
 				    (interface_list_entry->mask.s_addr == next_packet_adv->pwospf_mask.s_addr) &&
-				    (interface_list_entry->router_id == next_packet_adv->pwospf_rid)) {
+				    (interface_list_entry->router_id == next_packet_adv->pwospf_rid) &&
+				    (interface_list_entry->rx_rate == next_packet_adv->ngrp_rx_rate) &&
+				    (interface_list_entry->tx_rate == next_packet_adv->ngrp_tx_rate)) {
 
 						found = 1;
 						break;
@@ -882,6 +890,8 @@ void construct_pwospf_lsu_adv(router_state *rs, pwospf_lsu_adv **lsu_adv, uint32
 		iface_adv_walker->pwospf_sub.s_addr = iface->subnet.s_addr;
 		iface_adv_walker->pwospf_mask.s_addr = iface->mask.s_addr;
 		iface_adv_walker->pwospf_rid = iface->router_id;
+		iface_adv_walker->ngrp_rx_rate = iface->rx_rate;
+		iface_adv_walker->ngrp_tx_rate = iface->tx_rate;
 
 		cur = cur->next;
 		iface_adv_walker++;
