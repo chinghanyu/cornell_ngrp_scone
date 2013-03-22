@@ -400,8 +400,8 @@ void* netfpga_stats(void* arg) {
 
 		lock_netfpga_stats(rs);
 
-//		printf("port #     rx_pkts     tx_pkts   rx_kbytes   tx_kbytes     pkt/s   kbyte/s        time\n");
-//		printf("======================================================================================\n");
+		printf("port #     rx_pkts     tx_pkts   rx_kbytes   tx_kbytes     pkt/s   kbyte/s        time\n");
+		printf("======================================================================================\n");
 		for (i = 0; i < 8; ++i) {
 			/* read all the values */
 			rx_packets = get_rx_queue_num_pkts_received(&rs->netfpga, i);
@@ -427,12 +427,12 @@ void* netfpga_stats(void* arg) {
 			rs->stats_last[i][3] = tx_bytes;
 			rs->stats_last_time = now;
 
-//			printf("%6d  %10d  %10d  %10d  %10d  %8.2Lf  %8.2Lf  %d\n", i, rx_packets, tx_packets, rx_bytes, tx_bytes, ((double)packets_diff) / timeDiff, ((double)bytes_diff) / timeDiff, now);
+			printf("%6d  %10d  %10d  %10d  %10d  %8.2Lf  %8.2Lf  %d\n", i, rs->stats_last[i][0], rs->stats_last[i][1], rs->stats_last[i][2], rs->stats_last[i][3], rs->stats_avg[i][0], rs->stats_avg[i][1], now);
 		}
 
 		unlock_netfpga_stats(rs);
-//		printf("======================================================================================\n");
-//		printf("or_netfpga.c: NetFPGA end recording its stats.\n");
+		printf("======================================================================================\n");
+		printf("or_netfpga.c: NetFPGA end recording its stats.\n");
 		usleep(500000);
 	}
 
