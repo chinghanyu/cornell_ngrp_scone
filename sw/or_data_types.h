@@ -153,6 +153,8 @@ struct pwospf_lsu_adv
 	struct in_addr pwospf_sub;
 	struct in_addr pwospf_mask;
 	uint32_t pwospf_rid;
+	uint32_t ngrp_rx_rate;
+	uint32_t ngrp_tx_rate;
 } __attribute__ ((packed));
 typedef struct pwospf_lsu_adv pwospf_lsu_adv;
 
@@ -396,6 +398,8 @@ typedef struct nbr_router nbr_router;
  	struct in_addr mask;
  	uint32_t router_id;
  	uint32_t is_active:1;
+ 	uint32_t rx_rate;
+ 	uint32_t tx_rate;
  };
 
  typedef struct pwospf_interface pwospf_interface;
