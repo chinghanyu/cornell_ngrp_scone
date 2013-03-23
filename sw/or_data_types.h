@@ -282,7 +282,7 @@ struct router_state {
 	pthread_mutex_t* stats_mutex;
 	struct timeval stats_last_time;
 	uint32_t stats_last[8][4];
-	long double stats_avg[8][2];
+	long double stats_avg[8][4];
 
 	pthread_mutex_t* local_ip_filter_list_mutex;
 	node* local_ip_filter_list;

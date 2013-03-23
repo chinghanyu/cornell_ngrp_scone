@@ -626,6 +626,7 @@ int populate_pwospf_router_interface_list(pwospf_router *router, uint8_t *packet
 			new_iface_list_entry->is_active = 0;
 			new_iface_list_entry->rx_rate = next_packet_adv->ngrp_rx_rate;
 			new_iface_list_entry->tx_rate = next_packet_adv->ngrp_tx_rate;
+			printf("or_pwospf.c: router_id = %d, rx_rate = %d, tx_rate = %d\n", new_iface_list_entry->router_id, new_iface_list_entry->rx_rate, new_iface_list_entry->tx_rate);
 
 
 			/* insert the new adv into the list */
@@ -686,7 +687,7 @@ int populate_pwospf_router_interface_list(pwospf_router *router, uint8_t *packet
 				new_iface_list_entry->is_active = 0;
 				new_iface_list_entry->rx_rate = next_packet_adv->ngrp_rx_rate;
 				new_iface_list_entry->tx_rate = next_packet_adv->ngrp_tx_rate;
-
+				printf("or_pwospf.c: router_id = %d, rx_rate = %d, tx_rate = %d\n", new_iface_list_entry->router_id, new_iface_list_entry->rx_rate, new_iface_list_entry->tx_rate);
 
 				/* insert the new adv into the list */
 				new_iface_list_node->data = (void *)new_iface_list_entry;

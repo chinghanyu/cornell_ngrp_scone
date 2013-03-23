@@ -384,9 +384,9 @@ void* netfpga_stats(void* arg) {
 	router_state* rs = (router_state*)arg;
 	struct timeval now;
 	uint32_t rx_packets, tx_packets, rx_bytes, tx_bytes;
-	uint32_t packets_diff, bytes_diff;
+	uint32_t rx_packets_diff, tx_packets_diff, rx_bytes_diff, tx_bytes_diff;
 	long double timeDiff;
-	int i;
+	int i, j;
 
 	while (1) {
 //		printf("or_netfpga.c: NetFPGA begin recording its stats...\n");
@@ -410,15 +410,20 @@ void* netfpga_stats(void* arg) {
 			tx_bytes = get_tx_queue_num_bytes_sent(&rs->netfpga, i);
 
 			/* compute differences */
-			packets_diff = (rx_packets - rs->stats_last[i][0]) + (tx_packets - rs->stats_last[i][1]);
-			bytes_diff = (rx_bytes - rs->stats_last[i][2]) + (tx_bytes - rs->stats_last[i][3]);
+			rx_packets_diff = rx_packets - rs->stats_last[i][0];
+			tx_packets_diff = tx_packets - rs->stats_last[i][1];
+			rx_bytes_diff = rx_bytes - rs->stats_last[i][2];
+			tx_bytes_diff = tx_bytes - rs->stats_last[i][3];
 
 			/* bytes_diff will be in kB */
-			bytes_diff /= 1000;
+			rx_bytes_diff /= 1000;
+			tx_bytes_diff /= 1000;
 
 			/* update averages */
-			rs->stats_avg[i][0] = ((double)packets_diff) / timeDiff;
-			rs->stats_avg[i][1] = ((double)bytes_diff) / timeDiff;
+			rs->stats_avg[i][0] = ((double)rx_packets_diff) / timeDiff;
+			rs->stats_avg[i][1] = ((double)tx_packets_diff) / timeDiff;
+			rs->stats_avg[i][2] = ((double)rx_bytes_diff) / timeDiff;
+			rs->stats_avg[i][3] = ((double)tx_bytes_diff) / timeDiff;
 
 			/* store data back */
 			rs->stats_last[i][0] = rx_packets;
@@ -427,12 +432,30 @@ void* netfpga_stats(void* arg) {
 			rs->stats_last[i][3] = tx_bytes;
 			rs->stats_last_time = now;
 
-			printf("%6d  %10d  %10d  %10d  %10d  %8.2Lf  %8.2Lf  %d\n", i, rs->stats_last[i][0], rs->stats_last[i][1], rs->stats_last[i][2], rs->stats_last[i][3], rs->stats_avg[i][0], rs->stats_avg[i][1], now);
+			printf("%6d  %10d  %10d  %10d  %10d  %8.2Lf  %8.2Lf  %d\n", i, rs->stats_last[i][0], rs->stats_last[i][1], rs->stats_last[i][2], rs->stats_last[i][3], rs->stats_avg[i][0] + rs->stats_avg[i][1], rs->stats_avg[i][2] + rs->stats_avg[i][3], now);
+		}
+
+		node* cur = NULL;		
+		pwospf_router* r = get_router_by_rid(rs->router_id, rs->pwospf_router_list);
+		assert(r);
+
+		cur = r->interface_list;
+		j = 0;
+		
+		while (cur) {
+			pwospf_interface* iface = (pwospf_interface*)cur->data;
+			iface->rx_rate = (uint32_t)(rs->stats_avg[j][2]);
+			iface->tx_rate = (uint32_t)(rs->stats_avg[j][3]);
+			printf("or_netfpga.c: iface->rx_rate[%d] = %d (kbytes)\n", j, iface->rx_rate);
+			printf("or_netfpga.c: iface->tx_rate[%d] = %d (kbytes)\n", j, iface->tx_rate);
+			cur = cur->next;
+			j++;
 		}
 
 		unlock_netfpga_stats(rs);
 		printf("======================================================================================\n");
 		printf("or_netfpga.c: NetFPGA end recording its stats.\n");
+		printf("or_netfpga.c: There are %d interfaces in this router.\n", j);
 		usleep(500000);
 	}
 
