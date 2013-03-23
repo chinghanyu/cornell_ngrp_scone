@@ -134,7 +134,7 @@ void init(struct sr_instance* sr)
 			for (j = 0; j < 4; ++j) {
 				rs->stats_last[i][j] = 0;
 			}
-			for (j = 0; j < 2; ++j) {
+			for (j = 0; j < 4; ++j) {
 				rs->stats_avg[i][j] = 0.0;
 			}
 		}
@@ -734,7 +734,7 @@ void process_packet(struct sr_instance* sr, const uint8_t * packet, unsigned int
 	switch(ntohs(ether_hdr->eth_type)) {
 
 		case ETH_TYPE_IP:
-			printf(" ** -> Received IP packet of length %d\n", len);
+			//printf(" ** -> Received IP packet of length %d\n", len);
 			process_ip_packet(sr, packet, len, interface);
 			break;
 
@@ -795,13 +795,13 @@ int send_packet(struct sr_instance* sr, uint8_t* packet, unsigned int len, const
 		bzero(pad_packet, len+pad_len);
 		memmove(pad_packet, packet, len);
 
-		printf(" ** <- Sending packet of size %u out iface: %s\n", len+pad_len, iface);
+		//printf(" ** <- Sending packet of size %u out iface: %s\n", len+pad_len, iface);
 
 		result=sr_integ_low_level_output(sr, pad_packet, len+pad_len, iface);
 
 		free(pad_packet);
 	} else {
-		printf(" ** <- Sending packet of size %u out iface: %s\n", len, iface);
+		//printf(" ** <- Sending packet of size %u out iface: %s\n", len, iface);
 		result = sr_integ_low_level_output(sr, packet, len, iface);
 	}
 

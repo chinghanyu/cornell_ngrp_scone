@@ -860,6 +860,11 @@ void print_pwospf_load(const uint8_t *packet, unsigned int len) {
 				indent(3);
 				ip_addr.s_addr = iface_adv->pwospf_rid;
 				print_ip_address("Router ID", ip_addr);
+				indent(3);
+				printf("rx_rate = %u\n", iface_adv->ngrp_rx_rate );
+				indent(3);
+				printf("tx_rate = %u\n", iface_adv->ngrp_tx_rate );
+				
 
 				/* next advertisment */
 				iface_adv += 1;
