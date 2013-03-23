@@ -435,21 +435,24 @@ void* netfpga_stats(void* arg) {
 			printf("%6d  %10d  %10d  %10d  %10d  %8.2Lf  %8.2Lf  %d\n", i, rs->stats_last[i][0], rs->stats_last[i][1], rs->stats_last[i][2], rs->stats_last[i][3], rs->stats_avg[i][0] + rs->stats_avg[i][1], rs->stats_avg[i][2] + rs->stats_avg[i][3], now);
 		}
 
-		node* cur = NULL;		
+		node* cur = NULL;
 		pwospf_router* r = get_router_by_rid(rs->router_id, rs->pwospf_router_list);
-		assert(r);
-
-		cur = r->interface_list;
-		j = 0;
 		
-		while (cur) {
-			pwospf_interface* iface = (pwospf_interface*)cur->data;
-			iface->rx_rate = (uint32_t)(rs->stats_avg[j][2]);
-			iface->tx_rate = (uint32_t)(rs->stats_avg[j][3]);
-			printf("or_netfpga.c: iface->rx_rate[%d] = %d (kbytes)\n", j, iface->rx_rate);
-			printf("or_netfpga.c: iface->tx_rate[%d] = %d (kbytes)\n", j, iface->tx_rate);
-			cur = cur->next;
-			j++;
+		if (r != NULL) {
+
+			cur = r->interface_list;
+			j = 0;
+		
+			while (cur) {
+				pwospf_interface* iface = (pwospf_interface*)cur->data;
+				iface->rx_rate = (uint32_t)(rs->stats_avg[j][2]);
+				iface->tx_rate = (uint32_t)(rs->stats_avg[j][3]);
+				printf("or_netfpga.c: iface->rx_rate[%d] = %d (kbytes)\n", j, iface->rx_rate);
+				printf("or_netfpga.c: iface->tx_rate[%d] = %d (kbytes)\n", j, iface->tx_rate);
+				cur = cur->next;
+				j++;
+			}
+			
 		}
 
 		unlock_netfpga_stats(rs);
