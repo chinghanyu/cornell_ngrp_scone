@@ -30,7 +30,7 @@ void print_wrapper_list(node* route_wrapper_list);
 
 struct route_wrapper {
 	rtable_entry entry; /* entry being wrapped, lacking next hop ip */
-	uint16_t distance; /* distance from source in hops */
+	uint32_t distance; /* distance from source in hops */
 	uint32_t next_rid; /* next router id from source */
 	uint8_t directly_connected:1; /* is this route directly connected to us? */
 };
@@ -80,7 +80,7 @@ node* compute_rtable(uint32_t our_router_id, node* pwospf_router_list, node* if_
 
 	/* now have the shortest path to each router, build the temporary route table */
 	node* route_wrapper_list = build_route_wrapper_list(our_router_id, pwospf_router_list);
-	//print_wrapper_list(route_wrapper_list);
+	print_wrapper_list(route_wrapper_list);
 
 	/* we now have a list of wrapped proper entries, but they need specific interface info,
 	 * and need to lose the wrapping
@@ -160,7 +160,7 @@ pwospf_router* get_shortest(node* pwospf_router_list) {
 	pwospf_router* shortest_router = NULL;
 	uint32_t shortest_distance = 0xFFFFFFFF;
 
-	node* cur = pwospf_router_list;
+	node* cur = pwospf_router_list;		
 	while (cur) {
 		pwospf_router* r = (pwospf_router*)cur->data;
 		if ((!r->shortest_path_found) && (r->distance < shortest_distance)) {
@@ -177,21 +177,23 @@ pwospf_router* get_shortest(node* pwospf_router_list) {
  * Helper function to update distances of routers attached to w's interfaces
  */
 void update_neighbor_distance(pwospf_router* w, node* pwospf_router_list) {
+
 	node* cur = w->interface_list;
 	/* iterate through each interface of this router */
 	while (cur) {
 		pwospf_interface* i = (pwospf_interface*)cur->data;
 		if ((i->router_id != 0) && i->is_active) {
-			pwospf_router* v = get_router_by_rid(i->router_id, pwospf_router_list);
+			pwospf_router* v = get_router_by_rid(i->router_id, pwospf_router_list);			
 
 			/* if the distance to v is shorter through w, update it */
 			/* ADDED: ensure V exists in our router list as well,
 			 * it is possible that someone is reporting a router that is
 			 * a neighbor that we have not received an LSU for yet */
-			if ((v) && (!v->shortest_path_found) && ((w->distance+1) < v->distance)) {
-				v->distance = w->distance + 1;
+			if ((v) && (!v->shortest_path_found) && (w->distance + i->tx_rate < v->distance)) {
+				v->distance = w->distance + i->tx_rate;
 				v->prev_router = w;
 			}
+			printf("Router ID: %d, v->distance: %d, w->distance: %d, and tx_rate: %d\n", i->router_id, v->distance, w->distance, i->tx_rate);
 		}
 
 		cur = cur->next;
