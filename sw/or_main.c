@@ -474,62 +474,61 @@ void init_rtable(struct sr_instance* sr) {
 	path[len] = '/';
 	strcpy(path+len+1, sr->rtable);
 	FILE* file = fopen(path, "r");
-  if (file == NULL) {
-  	perror("Failure opening file");
-   	exit(1);
-  }
+	if (file == NULL) {
+	  	perror("Failure opening file");
+		exit(1);
+	}
 
-  char buf[1024];
-  bzero(buf, 1024);
+	char buf[1024];
+	bzero(buf, 1024);
 
-  router_state* rs = (router_state*)sr->interface_subsystem;
+	router_state* rs = (router_state*)sr->interface_subsystem;
 
-  /* walk through the file one line at a time adding its contents to the rtable */
-  while (fgets(buf, 1024, file) != NULL) {
-  	char* ip = NULL;
-  	char* gw = NULL;
-  	char* mask = NULL;
-  	char* iface = NULL;
-  	if (sscanf(buf, "%as %as %as %as", &ip, &gw, &mask, &iface) != 4) {
-  		printf("Failure reading from rtable file\n");
-  	}
+	/* walk through the file one line at a time adding its contents to the rtable */
+	while (fgets(buf, 1024, file) != NULL) {
+		char* ip = NULL;
+		char* gw = NULL;
+		char* mask = NULL;
+		char* iface = NULL;
+		if (sscanf(buf, "%as %as %as %as", &ip, &gw, &mask, &iface) != 4) {
+			printf("Failure reading from rtable file\n");
+		}
 
-  	rtable_entry* entry = (rtable_entry*)malloc(sizeof(rtable_entry));
-  	bzero(entry, sizeof(rtable_entry));
+		rtable_entry* entry = (rtable_entry*)malloc(sizeof(rtable_entry));
+		bzero(entry, sizeof(rtable_entry));
 
-  	if (inet_pton(AF_INET, ip, &(entry->ip)) == 0) {
-  		perror("Failure reading rtable");
-  	}
-  	if (inet_pton(AF_INET, gw, &(entry->gw)) == 0) {
-  		perror("Failure reading rtable");
-  	}
-  	if (inet_pton(AF_INET, mask, &(entry->mask)) == 0) {
-  		perror("Failure reading rtable");
-  	}
-  	strncpy(entry->iface, iface, 32);
+		if (inet_pton(AF_INET, ip, &(entry->ip)) == 0) {
+			perror("Failure reading rtable");
+		}
+		if (inet_pton(AF_INET, gw, &(entry->gw)) == 0) {
+			perror("Failure reading rtable");
+		}
+		if (inet_pton(AF_INET, mask, &(entry->mask)) == 0) {
+			perror("Failure reading rtable");
+		}
+		strncpy(entry->iface, iface, 32);
 
-  	entry->is_active = 1;
-  	entry->is_static = 1;
-  	/* create a node, set data pointer to the new entry */
-  	node* n = node_create();
-  	n->data = entry;
+		entry->is_active = 1;
+		entry->is_static = 1;
+		/* create a node, set data pointer to the new entry */
+		node* n = node_create();
+		n->data = entry;
 
-  	if (rs->rtable == NULL) {
-  		rs->rtable = n;
-  	} else {
-  		node_push_back(rs->rtable, n);
-  	}
+		if (rs->rtable == NULL) {
+			rs->rtable = n;
+		} else {
+			node_push_back(rs->rtable, n);
+		}
 
-  	char ip_array[INET_ADDRSTRLEN];
-  	char gw_array[INET_ADDRSTRLEN];
-  	char mask_array[INET_ADDRSTRLEN];
+		char ip_array[INET_ADDRSTRLEN];
+		char gw_array[INET_ADDRSTRLEN];
+		char mask_array[INET_ADDRSTRLEN];
 
-  	printf("Read: %s ", inet_ntop(AF_INET, &(entry->ip), ip_array, INET_ADDRSTRLEN));
-  	printf("%s ", inet_ntop(AF_INET, &(entry->gw), gw_array, INET_ADDRSTRLEN));
-  	printf("%s ", inet_ntop(AF_INET, &(entry->mask), mask_array, INET_ADDRSTRLEN));
-  	printf("%s\n", entry->iface);
-  }
-
+		printf("Read: %s ", inet_ntop(AF_INET, &(entry->ip), ip_array, INET_ADDRSTRLEN));
+		printf("%s ", inet_ntop(AF_INET, &(entry->gw), gw_array, INET_ADDRSTRLEN));
+		printf("%s ", inet_ntop(AF_INET, &(entry->mask), mask_array, INET_ADDRSTRLEN));
+		printf("%s\n", entry->iface);
+	}
 
 	if (fclose(file) != 0) {
 		perror("Failure closing file");

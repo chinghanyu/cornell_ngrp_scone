@@ -230,6 +230,9 @@ struct router_state {
 
 	node* rtable;
 	pthread_rwlock_t* rtable_lock;
+	
+	node* atable;
+	pthread_rwlock_t* atable_lock;
 
 	node* arp_cache;
 	pthread_rwlock_t* arp_cache_lock;
@@ -302,6 +305,13 @@ struct rtable_entry {
 };
 typedef struct rtable_entry rtable_entry;
 
+/** ATABLE STRUCT **/
+struct atable_entry {
+  	struct in_addr ip;
+  	struct in_addr mask;
+  	double alpha[4];
+};
+typedef struct atable_entry atable_entry;
 
 /** ARP CACHE STRUCT **/
 #define IF_LEN 32
