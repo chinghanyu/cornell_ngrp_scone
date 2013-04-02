@@ -8,6 +8,7 @@
 #include "or_utils.h"
 #include "or_pwospf.h"
 #include "or_rtable.h"
+#include "or_atable.h"
 #include "or_iface.h"
 #include "or_output.h"
 #include <assert.h>
@@ -18,6 +19,7 @@
 #include <time.h>
 #include <pthread.h>
 #include <errno.h>
+
 
 pwospf_router* get_shortest(node* pwospf_router_list);
 void update_neighbor_distance(pwospf_router* w, node* pwospf_router_list);
@@ -442,6 +444,86 @@ void* dijkstra_thread(void* arg) {
 		sprint_rtable(rs, &rtable_printout, &len);
 		printf("%s\n", rtable_printout);
 		free(rtable_printout);
+
+		/* compute alpha here */
+		lock_atable_wr(rs);
+		compute_atable(rs);
+/*
+		struct in_addr test_ip;
+		struct in_addr test_mask;
+		double test_alpha[4];
+		
+		inet_pton(AF_INET, "192.168.2.33", &test_ip);
+		inet_pton(AF_INET, "255.255.255.0", &test_mask);
+		
+		test_alpha[0] = 0.25;
+		test_alpha[1] = 0.0;
+		test_alpha[2] = 0.30;
+		test_alpha[3] = 0.45;
+		
+		add_atable_entry(&test_ip, &test_mask, test_alpha, rs);
+
+		inet_pton(AF_INET, "10.0.2.55", &test_ip);
+		inet_pton(AF_INET, "255.0.0.0", &test_mask);
+		
+		test_alpha[0] = 0.1;
+		test_alpha[1] = 0.2;
+		test_alpha[2] = 0.3;
+		test_alpha[3] = 0.4;
+		
+		add_atable_entry(&test_ip, &test_mask, test_alpha, rs);
+
+		inet_pton(AF_INET, "169.254.2.55", &test_ip);
+		inet_pton(AF_INET, "255.255.0.0", &test_mask);
+		
+		test_alpha[0] = 0.1;
+		test_alpha[1] = 0.0;
+		test_alpha[2] = 0.0;
+		test_alpha[3] = 0.9;
+		
+		add_atable_entry(&test_ip, &test_mask, test_alpha, rs);
+
+		inet_pton(AF_INET, "140.120.31.137", &test_ip);
+		inet_pton(AF_INET, "255.255.255.192", &test_mask);
+		
+		test_alpha[0] = 0.0;
+		test_alpha[1] = 0.7;
+		test_alpha[2] = 0.3;
+		test_alpha[3] = 0.0;
+		
+		add_atable_entry(&test_ip, &test_mask, test_alpha, rs);
+		
+		inet_pton(AF_INET, "169.254.2.55", &test_ip);
+		inet_pton(AF_INET, "255.255.0.0", &test_mask);
+		
+		test_alpha[0] = 0.0;
+		test_alpha[1] = 0.1;
+		test_alpha[2] = 0.9;
+		test_alpha[3] = 0.0;
+		
+		add_atable_entry(&test_ip, &test_mask, test_alpha, rs);
+		
+		inet_pton(AF_INET, "192.168.2.100", &test_ip);
+		inet_pton(AF_INET, "255.255.255.0", &test_mask);
+		del_atable_entry(&test_ip, &test_mask, rs);
+		
+		inet_pton(AF_INET, "140.120.31.137", &test_ip);
+		inet_pton(AF_INET, "255.255.255.192", &test_mask);
+		
+		del_atable_entry(&test_ip, &test_mask, rs);
+	
+		inet_pton(AF_INET, "224.0.0.39", &test_ip);
+		inet_pton(AF_INET, "255.255.255.255", &test_mask);
+		
+		test_alpha[0] = 0.25;
+		test_alpha[1] = 0.25;
+		test_alpha[2] = 0.25;
+		test_alpha[3] = 0.25;
+		
+		add_atable_entry(&test_ip, &test_mask, test_alpha, rs);
+*/
+		sprint_atable(rs);
+		unlock_atable(rs);
 
 		/* unlock everything */
 		unlock_mutex_pwospf_router_list(rs);

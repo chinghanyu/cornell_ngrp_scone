@@ -25,6 +25,7 @@
 #include "or_ip.h"
 #include "sr_base_internal.h"
 #include "or_rtable.h"
+#include "or_atable.h"
 #include "or_iface.h"
 #include "or_output.h"
 #include "or_cli.h"
@@ -86,6 +87,12 @@ void init(struct sr_instance* sr)
 
     rs->rtable_lock = (pthread_rwlock_t*)malloc(sizeof(pthread_rwlock_t));
     if (pthread_rwlock_init(rs->rtable_lock, NULL) != 0) {
+    	perror("Lock init error");
+    	exit(1);
+    }
+    
+    rs->atable_lock = (pthread_rwlock_t*)malloc(sizeof(pthread_rwlock_t));
+    if (pthread_rwlock_init(rs->atable_lock, NULL) != 0) {
     	perror("Lock init error");
     	exit(1);
     }
