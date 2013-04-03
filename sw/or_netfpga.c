@@ -447,8 +447,8 @@ void* netfpga_stats(void* arg) {
 				pwospf_interface* iface = (pwospf_interface*)cur->data;
 				iface->rx_rate = (uint32_t)(rs->stats_avg[j][2]);
 				iface->tx_rate = (uint32_t)(rs->stats_avg[j][3]);
-				printf("or_netfpga.c: iface->rx_rate[%d] = %d (kbytes)\n", j, iface->rx_rate);
-				printf("or_netfpga.c: iface->tx_rate[%d] = %d (kbytes)\n", j, iface->tx_rate);
+				//printf("or_netfpga.c: iface->rx_rate[%d] = %d (kbytes)\n", j, iface->rx_rate);
+				//printf("or_netfpga.c: iface->tx_rate[%d] = %d (kbytes)\n", j, iface->tx_rate);
 				cur = cur->next;
 				j++;
 			}

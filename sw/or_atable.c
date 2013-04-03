@@ -10,15 +10,9 @@
 #include <string.h>
 #include <assert.h>
 
-//#include "or_rtable.h"
 #include "or_atable.h"
-//#include "or_main.h"
 #include "or_data_types.h"
-//#include "or_output.h"
 #include "or_utils.h"
-//#include "or_netfpga.h"
-//#include "nf2/nf2util.h"
-//#include "reg_defines.h"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -280,7 +274,7 @@ int compute_atable(router_state* rs) {
 			 * atable.
 			 */
 			 
-			 	printf("or_atable.c: atable is emtpy\n");
+			 	//printf("or_atable.c: atable is emtpy\n");
 			 
 			 	/* allocate memory for a node and its data */
 				
