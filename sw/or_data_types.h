@@ -233,6 +233,11 @@ struct router_state {
 	
 	node* atable;
 	pthread_rwlock_t* atable_lock;
+	
+	node* rstable;
+	pthread_t* rstable_thread;
+	pthread_mutex_t* rstable_mutex;
+	pthread_rwlock_t* rstable_lock;
 
 	node* arp_cache;
 	pthread_rwlock_t* arp_cache_lock;
@@ -313,13 +318,24 @@ struct atable_entry {
 };
 typedef struct atable_entry atable_entry;
 
+/** RSTABLE STRUCT **/
+struct rstable_entry {
+	struct in_addr ip;
+	struct in_addr mask;
+	double rate;
+	unsigned int flow;
+	unsigned int last_flow;
+	struct timeval last_update_time;
+};
+typedef struct rstable_entry rstable_entry;
+
 /** ARP CACHE STRUCT **/
 #define IF_LEN 32
 
 struct arp_cache_entry {
-	struct in_addr ip;			/* target IP address */
+	struct in_addr ip;					/* target IP address */
 	unsigned char arp_ha[ETH_ADDR_LEN];	/* target hardware address */
-	time_t TTL;				/* time expiration of entry */
+	time_t TTL;							/* time expiration of entry */
 	int is_static;
 };
 typedef struct arp_cache_entry arp_cache_entry;

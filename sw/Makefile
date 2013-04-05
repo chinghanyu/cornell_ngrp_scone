@@ -68,7 +68,7 @@ SR_BASE_SRCS = sr_base.c sr_dumper.c sr_integration.c sr_lwtcp_glue.c\
                or_arp.c or_icmp.c or_ip.c or_iface.c or_rtable.c\
 		       or_output.c or_cli.c or_vns.c or_sping.c or_pwospf.c\
 		       or_dijkstra.c or_netfpga.c or_www.c or_nat.c\
-		       or_atable.c
+		       or_atable.c or_rstable.c
 
 SR_BASE_OBJS = $(patsubst %.c,%.o,$(SR_BASE_SRCS)) nf2/nf2util.o
 

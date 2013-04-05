@@ -416,8 +416,8 @@ void* netfpga_stats(void* arg) {
 			tx_bytes_diff = tx_bytes - rs->stats_last[i][3];
 
 			/* bytes_diff will be in kB */
-			rx_bytes_diff /= 1000;
-			tx_bytes_diff /= 1000;
+			rx_bytes_diff /= 1024;
+			tx_bytes_diff /= 1024;
 
 			/* update averages */
 			rs->stats_avg[i][0] = ((double)rx_packets_diff) / timeDiff;
@@ -432,7 +432,7 @@ void* netfpga_stats(void* arg) {
 			rs->stats_last[i][3] = tx_bytes;
 			rs->stats_last_time = now;
 
-			printf("%6d  %10d  %10d  %10d  %10d  %8.2Lf  %8.2Lf  %d\n", i, rs->stats_last[i][0], rs->stats_last[i][1], rs->stats_last[i][2], rs->stats_last[i][3], rs->stats_avg[i][0] + rs->stats_avg[i][1], rs->stats_avg[i][2] + rs->stats_avg[i][3], now);
+			printf("%6d  %10d  %10d  %10d  %10d  %8.2Lf  %8.2Lf  %u\n", i, rs->stats_last[i][0], rs->stats_last[i][1], rs->stats_last[i][2], rs->stats_last[i][3], rs->stats_avg[i][0] + rs->stats_avg[i][1], rs->stats_avg[i][2] + rs->stats_avg[i][3], now);
 		}
 
 		node* cur = NULL;

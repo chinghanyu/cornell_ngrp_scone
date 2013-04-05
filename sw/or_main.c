@@ -26,6 +26,7 @@
 #include "sr_base_internal.h"
 #include "or_rtable.h"
 #include "or_atable.h"
+#include "or_rstable.h"
 #include "or_iface.h"
 #include "or_output.h"
 #include "or_cli.h"
@@ -93,6 +94,12 @@ void init(struct sr_instance* sr)
     
     rs->atable_lock = (pthread_rwlock_t*)malloc(sizeof(pthread_rwlock_t));
     if (pthread_rwlock_init(rs->atable_lock, NULL) != 0) {
+    	perror("Lock init error");
+    	exit(1);
+    }
+    
+    rs->rstable_lock = (pthread_rwlock_t*)malloc(sizeof(pthread_rwlock_t));
+    if (pthread_rwlock_init(rs->rstable_lock, NULL) != 0) {
     	perror("Lock init error");
     	exit(1);
     }
@@ -306,12 +313,18 @@ void init(struct sr_instance* sr)
     */
 
     /* if we are on the NETFPGA spawn the stats thread */
-		if (rs->is_netfpga) {
+	if (rs->is_netfpga) {
 	    rs->stats_thread = (pthread_t*)malloc(sizeof(pthread_t));
 	    if(pthread_create(rs->stats_thread, NULL, netfpga_stats, (void*)rs) != 0) {
 		    perror("Thread create error");
 	    }
-		}
+	}
+	
+	/** SPAWN THE RSTABLE UPDATE THREAD **/
+	rs->rstable_thread = (pthread_t*)malloc(sizeof(pthread_t));
+	if (pthread_create(rs->rstable_thread, NULL, rstable_thread, (void*)get_router_state(sr)) != 0) {
+		perror("Thread create error");
+	}
 }
 
 void init_add_interface(struct sr_instance* sr, struct sr_vns_if* vns_if) {

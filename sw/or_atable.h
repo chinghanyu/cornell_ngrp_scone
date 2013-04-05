@@ -1,6 +1,6 @@
 /*
- * Authors: David Erickson, Filip Paun
- * Date: 06/2007
+ * Authors: NGRP
+ * Date: 04/2013
  *
  */
  

@@ -9,6 +9,7 @@
 #include "or_pwospf.h"
 #include "or_rtable.h"
 #include "or_atable.h"
+#include "or_rstable.h"
 #include "or_iface.h"
 #include "or_output.h"
 #include <assert.h>
@@ -448,6 +449,21 @@ void* dijkstra_thread(void* arg) {
 		/* compute alpha here */
 		lock_atable_wr(rs);
 		compute_atable(rs);
+		
+//		struct in_addr destination, mask;
+//		struct timeval now;
+	
+		//destination.s_addr = dest;
+//		inet_pton(AF_INET, "140.120.31.137", &destination);
+//		inet_pton(AF_INET, "255.255.255.0", &mask);
+		
+//		lock_rstable_wr(rs);
+		
+//		add_rstable_entry(&destination, &mask, 999, rs);
+//		sprint_rstable(rs);
+		
+//		unlock_rstable(rs);
+
 /*
 		struct in_addr test_ip;
 		struct in_addr test_mask;

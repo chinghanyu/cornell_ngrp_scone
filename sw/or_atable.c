@@ -1,6 +1,6 @@
 /*
  * Authors: NGRP
- * Date: 06/2007
+ * Date: 04/2013
  *
  */
 
@@ -13,6 +13,7 @@
 #include "or_atable.h"
 #include "or_data_types.h"
 #include "or_utils.h"
+#include "or_rstable.h"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -143,7 +144,7 @@ int add_atable_entry(struct in_addr* destination, struct in_addr* mask, double* 
 		
 	}
 	
-	//sprint_atable_entry(ae, 9999);
+	//sprint_atable_entry(n, 9999);
 	
 	return 1;
 
@@ -246,9 +247,9 @@ int compute_atable(router_state* rs) {
 	assert(rs);
 	node* n = rs->rtable;
 	
+	
 	double delta = 0.01;
 	double eta = 1.0;
-	double rate = 1.0;
 	double alpha[4];
 	
 	node* p = NULL;	// for atable linked list
@@ -301,6 +302,7 @@ int compute_atable(router_state* rs) {
 			 * and update alpha
 			 */
 			 	atable_entry* ae = (atable_entry*)p->data;
+			 	double rate = MAX(1, get_rate(&(ae->ip), &(ae->mask), rs));
 			
 				if (!strcmp(iface, "eth0")) {
 					alpha[1] = MIN(1, MAX(0, ae->alpha[1] - ae->alpha[1] * delta / eta / rate));
@@ -335,6 +337,7 @@ int compute_atable(router_state* rs) {
 	}
 	
 	return 1;
+	
 }
 
 /* NOT THREAD SAFE
@@ -346,6 +349,7 @@ int delete_atable(router_state* rs) {
 	rs->atable = NULL;
 	
 	return 1;
+	
 }
 
 /* NOT THREAD SAFE
@@ -383,6 +387,7 @@ int sprint_atable(router_state *rs) {
 	printf("=============================================================================\n");
 	
 	return 1;
+	
 }
 
 void lock_atable_rd(router_state *rs) {

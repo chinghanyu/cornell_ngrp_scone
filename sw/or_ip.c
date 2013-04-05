@@ -15,6 +15,7 @@
 #include "or_arp.h"
 #include "or_icmp.h"
 #include "or_rtable.h"
+#include "or_rstable.h"
 #include "or_output.h"
 #include "or_utils.h"
 #include "or_rtable.h"
@@ -150,6 +151,16 @@ void process_ip_packet(struct sr_instance* sr, const uint8_t * packet, unsigned 
 
 					/* forward packet out the next hop interface */
 					send_ip(sr, packet_copy, len, &(next_hop), next_hop_iface);
+					
+					lock_rstable_wr(rs);
+					
+					struct in_addr mask;
+					inet_pton(AF_INET, "255.255.255.0", &mask);
+					
+					add_rstable_entry(&(ip->ip_dst), &mask, len, rs);
+					
+					unlock_rstable(rs);
+					
 				}
 			} /* end of strncmp(interface ... */
 		} /* end of if(get_next_hop) */
@@ -293,6 +304,20 @@ uint32_t send_ip_packet(struct sr_instance *sr, uint8_t proto, uint32_t src, uin
 
 	/* ship the packet */
 	int ret = send_ip(sr, new_packet, new_packet_len, &(next_hop), iface_struct->name);
+	
+	printf("or_ip.c: A packet src = %u, dst = %u, len = %u is sent\n", src, dest, len);
+	
+	/* update the flow calculation here */
+/*	struct in_addr destination, mask;
+	struct timeval now;
+	
+	//destination.s_addr = dest;
+	inet_pton(AF_INET, "140.120.31.137", &destination);
+	inet_pton(AF_INET, "255.255.255.0", &mask);
+	gettimeofday(&now, NULL);
+	
+	add_rstable_entry(&destination, &mask, new_packet_len, &now, rs);
+*/	/* this is not the function we are looking for */
 
 	unlock_rtable(rs);
 	unlock_if_list(rs);
