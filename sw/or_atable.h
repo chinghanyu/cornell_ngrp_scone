@@ -13,10 +13,10 @@
 double get_alpha(struct in_addr* destination, struct in_addr* mask, char* next_hop_iface, router_state* rs);
 
 node* get_atable_entry(struct in_addr* destination, struct in_addr* mask, router_state* rs);
-int add_atable_entry(struct in_addr* destination, struct in_addr* mask, double* alpha, router_state* rs);
+int add_atable_entry(struct in_addr* destination, struct in_addr* mask, struct in_addr* next_hop_ip, double* alpha, router_state* rs);
 int del_atable_entry(struct in_addr* destination, struct in_addr* mask, router_state* rs);
 int sprint_atable_entry(node* n, unsigned int index);
-int update_atable_entry(struct in_addr* destination, struct in_addr* mask, double* alpha, node* n);
+int update_atable_entry(struct in_addr* destination, struct in_addr* mask, struct in_addr* next_hop_ip, double* alpha, node* n);
 
 int compute_atable(router_state* rs);
 int delete_atable(router_state* rs);

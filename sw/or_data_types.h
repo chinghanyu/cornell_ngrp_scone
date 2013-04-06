@@ -314,7 +314,8 @@ typedef struct rtable_entry rtable_entry;
 struct atable_entry {
   	struct in_addr ip;
   	struct in_addr mask;
-  	double alpha[4];
+  	struct in_addr next_hop_ip[4];
+  	double alpha[4];  	
 };
 typedef struct atable_entry atable_entry;
 

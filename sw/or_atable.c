@@ -11,9 +11,9 @@
 #include <assert.h>
 
 #include "or_atable.h"
+#include "or_rstable.h"
 #include "or_data_types.h"
 #include "or_utils.h"
-#include "or_rstable.h"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -105,7 +105,7 @@ node* get_atable_entry(struct in_addr* destination, struct in_addr* mask, router
 /* !! NOT THREAD SAFE !!
  * LOCK RS FOR WRITING BEFORE CALLING THE FUNCTION
  */
-int add_atable_entry(struct in_addr* destination, struct in_addr* mask, double* alpha, router_state* rs) {
+int add_atable_entry(struct in_addr* destination, struct in_addr* mask, struct in_addr* next_hop_ip, double* alpha, router_state* rs) {
 
 	/* Logic:
 	 *	 Add a new atable entry. If it exists, update it, otherwise insert a new
@@ -114,6 +114,7 @@ int add_atable_entry(struct in_addr* destination, struct in_addr* mask, double* 
 
 	assert(destination);
 	assert(mask);
+	assert(next_hop_ip);
 	assert(alpha);
 	assert(rs);
 	
@@ -126,7 +127,7 @@ int add_atable_entry(struct in_addr* destination, struct in_addr* mask, double* 
 		n = node_create();
 		n->data = (atable_entry*)calloc(1, sizeof(atable_entry));
 		
-		update_atable_entry(destination, mask, alpha, n);
+		update_atable_entry(destination, mask, next_hop_ip, alpha, n);
 
 		if (rs->atable == NULL) {
 		
@@ -140,7 +141,7 @@ int add_atable_entry(struct in_addr* destination, struct in_addr* mask, double* 
 		
 	} else {
 	
-		update_atable_entry(destination, mask, alpha, n);
+		update_atable_entry(destination, mask, next_hop_ip, alpha, n);
 		
 	}
 	
@@ -193,11 +194,17 @@ int sprint_atable_entry(node* n, unsigned int index) {
 	assert(n);
 	atable_entry* ae = (atable_entry*)n->data;
 	
-	char ip_str[INET_ADDRSTRLEN], mask_str[INET_ADDRSTRLEN];
+	char ip_str[INET_ADDRSTRLEN], mask_str[INET_ADDRSTRLEN], next_hop_ip_str0[INET_ADDRSTRLEN], next_hop_ip_str1[INET_ADDRSTRLEN], next_hop_ip_str2[INET_ADDRSTRLEN], next_hop_ip_str3[INET_ADDRSTRLEN];
+	
 	inet_ntop(AF_INET, &(ae->ip), ip_str, INET_ADDRSTRLEN);
 	inet_ntop(AF_INET, &(ae->mask), mask_str, INET_ADDRSTRLEN);
 	
-	printf("%5u %-15s %-15s %1.7f %1.7f %1.7f %1.7f\n", index, ip_str, mask_str, ae->alpha[0], ae->alpha[1], ae->alpha[2], ae->alpha[3]);
+	inet_ntop(AF_INET, &(ae->next_hop_ip[0]), next_hop_ip_str0, INET_ADDRSTRLEN);
+	inet_ntop(AF_INET, &(ae->next_hop_ip[1]), next_hop_ip_str1, INET_ADDRSTRLEN);
+	inet_ntop(AF_INET, &(ae->next_hop_ip[2]), next_hop_ip_str2, INET_ADDRSTRLEN);
+	inet_ntop(AF_INET, &(ae->next_hop_ip[3]), next_hop_ip_str3, INET_ADDRSTRLEN);
+	
+	printf("%5u %-15s %-15s %-15s %1.7f %-15s %1.7f %-15s %1.7f %-15s %1.7f\n", index, ip_str, mask_str, next_hop_ip_str0, ae->alpha[0], next_hop_ip_str1, ae->alpha[1], next_hop_ip_str2, ae->alpha[2], next_hop_ip_str3, ae->alpha[3]);
 	
 	return 1;
 
@@ -207,7 +214,7 @@ int sprint_atable_entry(node* n, unsigned int index) {
 /* !! NOT THREAD SAFE !!
  * LOCK RS FOR WRITING BEFORE CALLING THE FUNCTION
  */
-int update_atable_entry(struct in_addr* destination, struct in_addr* mask, double* alpha, node* n) {
+int update_atable_entry(struct in_addr* destination, struct in_addr* mask, struct in_addr* next_hop_ip, double* alpha, node* n) {
 
 	/* Logic:
 	 *   Modify the content pointed by the given node pointer.
@@ -221,6 +228,11 @@ int update_atable_entry(struct in_addr* destination, struct in_addr* mask, doubl
 	
 	ae->ip.s_addr = destination->s_addr;
 	ae->mask.s_addr = mask->s_addr;
+	
+	(ae->next_hop_ip[0]).s_addr = (next_hop_ip[0]).s_addr;
+	(ae->next_hop_ip[1]).s_addr = (next_hop_ip[1]).s_addr;
+	(ae->next_hop_ip[2]).s_addr = (next_hop_ip[2]).s_addr;
+	(ae->next_hop_ip[3]).s_addr = (next_hop_ip[3]).s_addr;
 	
 	ae->alpha[0] = alpha[0];
 	ae->alpha[1] = alpha[1];
@@ -250,6 +262,8 @@ int compute_atable(router_state* rs) {
 	
 	double delta = 0.01;
 	double eta = 1.0;
+	
+	struct in_addr next_hop_ip[4];
 	double alpha[4];
 	
 	node* p = NULL;	// for atable linked list
@@ -279,22 +293,31 @@ int compute_atable(router_state* rs) {
 			 
 			 	/* allocate memory for a node and its data */
 				
+				next_hop_ip[0].s_addr = 0;
+				next_hop_ip[1].s_addr = 0;
+				next_hop_ip[2].s_addr = 0;
+				next_hop_ip[3].s_addr = 0;
+				
 				alpha[0] = 0;
 				alpha[1] = 0;
 				alpha[2] = 0;
 				alpha[3] = 0;
 				
 				if (!strcmp(iface, "eth0")) {
+					next_hop_ip[0] = re->gw;
 					alpha[0] = 1;
 				} else if (!strcmp(iface, "eth1")) {
+					next_hop_ip[1] = re->gw;
 					alpha[1] = 1;
 				} else if (!strcmp(iface, "eth2")) {
+					next_hop_ip[2] = re->gw;
 					alpha[2] = 1;
 				} else if (!strcmp(iface, "eth3")) {
+					next_hop_ip[3] = re->gw;
 					alpha[3] = 1;
 				}
 
-				add_atable_entry(&(re->ip), &(re->mask), alpha, rs);
+				add_atable_entry(&(re->ip), &(re->mask), next_hop_ip, alpha, rs);
 				
 			} else {
 			
@@ -302,31 +325,50 @@ int compute_atable(router_state* rs) {
 			 * and update alpha
 			 */
 			 	atable_entry* ae = (atable_entry*)p->data;
+			 	
+			 	lock_rstable_rd(rs);
 			 	double rate = MAX(1, get_rate(&(ae->ip), &(ae->mask), rs));
+			 	unlock_rstable(rs);
 			
 				if (!strcmp(iface, "eth0")) {
+					next_hop_ip[1] = ae->next_hop_ip[1];
+					next_hop_ip[2] = ae->next_hop_ip[2];
+					next_hop_ip[3] = ae->next_hop_ip[3];
+					next_hop_ip[0] = re->gw;
 					alpha[1] = MIN(1, MAX(0, ae->alpha[1] - ae->alpha[1] * delta / eta / rate));
 					alpha[2] = MIN(1, MAX(0, ae->alpha[2] - ae->alpha[2] * delta / eta / rate));
 					alpha[3] = MIN(1, MAX(0, ae->alpha[3] - ae->alpha[3] * delta / eta / rate));
 					alpha[0] = 1 - ae->alpha[1] - ae->alpha[2] - ae->alpha[3];
 				} else if (!strcmp(iface, "eth1")) {
+					next_hop_ip[0] = ae->next_hop_ip[0];
+					next_hop_ip[2] = ae->next_hop_ip[2];
+					next_hop_ip[3] = ae->next_hop_ip[3];
+					next_hop_ip[1] = re->gw;
 					alpha[0] = MIN(1, MAX(0, ae->alpha[0] - ae->alpha[0] * delta / eta / rate));
 					alpha[2] = MIN(1, MAX(0, ae->alpha[2] - ae->alpha[2] * delta / eta / rate));
 					alpha[3] = MIN(1, MAX(0, ae->alpha[3] - ae->alpha[3] * delta / eta / rate));
 					alpha[1] = 1 - ae->alpha[0] - ae->alpha[2] - ae->alpha[3];
 				} else if (!strcmp(iface, "eth2")) {
+					next_hop_ip[0] = ae->next_hop_ip[0];
+					next_hop_ip[1] = ae->next_hop_ip[1];
+					next_hop_ip[3] = ae->next_hop_ip[3];
+					next_hop_ip[2] = re->gw;
 					alpha[0] = MIN(1, MAX(0, ae->alpha[0] - ae->alpha[0] * delta / eta / rate));
 					alpha[1] = MIN(1, MAX(0, ae->alpha[1] - ae->alpha[1] * delta / eta / rate));
 					alpha[3] = MIN(1, MAX(0, ae->alpha[3] - ae->alpha[3] * delta / eta / rate));
 					alpha[2] = 1 - ae->alpha[0] - ae->alpha[1] - ae->alpha[3];
 				} else if (!strcmp(iface, "eth3")) {
+					next_hop_ip[0] = ae->next_hop_ip[0];
+					next_hop_ip[1] = ae->next_hop_ip[1];
+					next_hop_ip[2] = ae->next_hop_ip[2];
+					next_hop_ip[3] = re->gw;
 					alpha[0] = MIN(1, MAX(0, ae->alpha[0] - ae->alpha[0] * delta / eta / rate));
 					alpha[1] = MIN(1, MAX(0, ae->alpha[1] - ae->alpha[1] * delta / eta / rate));
 					alpha[2] = MIN(1, MAX(0, ae->alpha[2] - ae->alpha[2] * delta / eta / rate));
 					alpha[3] = 1 - ae->alpha[0] - ae->alpha[1] - ae->alpha[2];
 				}
 				
-				update_atable_entry(&(re->ip), &(re->mask), alpha, p);
+				update_atable_entry(&(re->ip), &(re->mask), next_hop_ip, alpha, p);
 				
 			}
 			
@@ -366,9 +408,9 @@ int sprint_atable(router_state *rs) {
 	unsigned int i = 0;
 	
 	printf("---ATABLE AFTER DIJKSTRA---\n");
-	printf("Index Destination     Mask            alpha[0]  alpha[1]  alpha[2]  alpha[3] \n");
-	printf("=============================================================================\n");
-	      //    0 140.120.31.137  255.255.255.0   0.2500000 0.0000000 0.3000000 0.4500000
+	printf("Index Destination     Mask            Next Hop IP[0]  alpha[0]  Next Hop IP[1]  alpha[1]  Next Hop IP[2]  alpha[2]  Next Hop IP[3]  alpha[3] \n");
+	printf("=============================================================================================================================================\n");
+	      //    0 192.168.101.0   255.255.255.0   0.0.0.0         1.0000000 0.0.0.0         0.0000000 0.0.0.0         0.0000000 0.0.0.0         0.0000000
 	
 	if (!n) {
 	
@@ -384,7 +426,7 @@ int sprint_atable(router_state *rs) {
 		
 	}
 	
-	printf("=============================================================================\n");
+	printf("=============================================================================================================================================\n");
 	
 	return 1;
 	
