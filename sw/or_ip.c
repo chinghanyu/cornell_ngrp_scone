@@ -16,6 +16,7 @@
 #include "or_icmp.h"
 #include "or_rtable.h"
 #include "or_rstable.h"
+#include "or_atable.h"
 #include "or_output.h"
 #include "or_utils.h"
 #include "or_rtable.h"
@@ -82,10 +83,13 @@ void process_ip_packet(struct sr_instance* sr, const uint8_t * packet, unsigned 
 		process_pwospf_packet(sr, packet, len, interface);
 	} else {
 		/* Need to forward this packet to another host */
-		struct in_addr next_hop;
+		struct in_addr next_hop, ngrp_ip, ngrp_mask;
 		char next_hop_iface[IF_LEN];
 		bzero(next_hop_iface, IF_LEN);
 
+		char ngrp_iface[IF_LEN];
+
+		inet_pton(AF_INET, "255.255.255.0", &ngrp_mask);
 
 		/* is there an entry in our routing table for the destination? */
 		if(get_next_hop(&next_hop, next_hop_iface, IF_LEN,
@@ -148,16 +152,58 @@ void process_ip_packet(struct sr_instance* sr, const uint8_t * packet, unsigned 
 
 				 	uint8_t* packet_copy = (uint8_t*)malloc(len);
 				 	memcpy(packet_copy, packet, len);
+				 	
+				 	lock_atable_rd(rs);
+				 	
+				 	node* n = get_atable_entry(&(ip->ip_dst), &ngrp_mask, rs);
+				 	atable_entry* ae = (atable_entry*)n->data;
+				 	
+				 	unsigned int r = rand();
+					char ngrp_ip_str[INET_ADDRSTRLEN];				
 
-					/* forward packet out the next hop interface */
-					send_ip(sr, packet_copy, len, &(next_hop), next_hop_iface);
+		            if (r < ae->alpha[0] * RAND_MAX) {
+		            
+						ngrp_ip = ae->next_hop_ip[0];
+						strcpy(ngrp_iface, "eth0");
+						
+					} else if (r < (ae->alpha[0] + ae->alpha[1]) * RAND_MAX) {
+					
+						ngrp_ip = ae->next_hop_ip[1];
+						strcpy(ngrp_iface, "eth1");
+						
+					} else if (r < (ae->alpha[0] + ae->alpha[1] + ae->alpha[2]) * RAND_MAX) {
+					
+						ngrp_ip = ae->next_hop_ip[2];
+						strcpy(ngrp_iface, "eth2");
+						
+					} else { /* rand() < (ae->alpha[0] + ae->alpha[1] + ae->alpha[2] + ae->alpha[3]) * RAND_MAX, which is always true */
+					
+						ngrp_ip = ae->next_hop_ip[3];
+						strcpy(ngrp_iface, "eth3");
+					
+					}
+					
+					if (ngrp_ip.s_addr == 0)
+						ngrp_ip = (ip->ip_dst);
+				
+					send_ip(sr, packet_copy, len, &(ngrp_ip), ngrp_iface);
+					
+					inet_ntop(AF_INET, &(ngrp_ip), ngrp_ip_str, INET_ADDRSTRLEN);
+					//printf("or_ip.c#: an IP packet sent to %s is forwarded to %s\n", ngrp_ip_str, ngrp_iface);
+					
+					/* the original version of send_ip() */       
+           			/* forward packet out the next hop interface */
+
+					//send_ip(sr, packet_copy, len, &(next_hop), next_hop_iface);
+					
+					inet_ntop(AF_INET, &(next_hop), ngrp_ip_str, INET_ADDRSTRLEN);
+					//printf("or_ip.c: an IP packet sent to %s is forwarded to %s\n", ngrp_ip_str, next_hop_iface);
+
+					unlock_atable(rs);
 					
 					lock_rstable_wr(rs);
 					
-					struct in_addr mask;
-					inet_pton(AF_INET, "255.255.255.0", &mask);
-					
-					add_rstable_entry(&(ip->ip_dst), &mask, len, rs);
+					add_rstable_entry(&(ip->ip_dst), &ngrp_mask, len, rs);
 					
 					unlock_rstable(rs);
 					

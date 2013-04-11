@@ -69,8 +69,10 @@ node* compute_rtable(uint32_t our_router_id, node* pwospf_router_list, node* if_
 
 	/* Set our router as the shortest */
 	r_shortest = get_router_by_rid(our_router_id, pwospf_router_list);
-
+	//printf("or_dijkstra.c: r_shortest %u %u %d\n", r_shortest->distance, r_shortest->router_id, r_shortest->last_update);
+	
 	while (r_shortest) {
+		//printf("or_dijkstra.c: get_shortest: r_shortest %u %u\n", r_shortest->distance, r_shortest->router_id);
 		/* add this router to N' */
 		r_shortest->shortest_path_found = 1;
 
@@ -79,6 +81,8 @@ node* compute_rtable(uint32_t our_router_id, node* pwospf_router_list, node* if_
 
 		/* get the next router with the shortest distance */
 		r_shortest = get_shortest(pwospf_router_list);
+		
+		//printf("get_shortest\n");
 	}
 
 	/* now have the shortest path to each router, build the temporary route table */
@@ -170,6 +174,7 @@ pwospf_router* get_shortest(node* pwospf_router_list) {
 			shortest_router = r;
 			shortest_distance = r->distance;
 		}
+		//printf("or_dijkstra.c: shortest_router: %u, shortest_distance: %u, router: %d, r->distance: %d\n", shortest_router, shortest_distance, r, r->distance);
 		cur = cur->next;
 	}
 
@@ -196,7 +201,7 @@ void update_neighbor_distance(pwospf_router* w, node* pwospf_router_list) {
 				v->distance = w->distance + i->tx_rate;
 				v->prev_router = w;
 			}
-			printf("Router ID: %d, v->distance: %d, w->distance: %d, and tx_rate: %d\n", i->router_id, v->distance, w->distance, i->tx_rate);
+			//printf("or_dijkstra.c: Router ID: %d, v->distance: %d, w->distance: %d, and tx_rate: %d, prev_router: %d\n", i->router_id, v->distance, w->distance, i->tx_rate, v->prev_router);
 		}
 
 		cur = cur->next;
@@ -236,14 +241,14 @@ void add_route_wrappers(uint32_t our_rid, node** head, pwospf_router* r) {
 				/* walk down until the next router is the source */
 				pwospf_router* cur_router = r;
 				if (!cur_router->prev_router) {
-					wrapper->next_rid = i->router_id;
+					wrapper->next_rid = i->router_id;			
 				} else {
-					while (cur_router->prev_router->distance != 0) {
+					while (cur_router->prev_router->router_id != our_rid) {
 						cur_router = cur_router->prev_router;
 					}
 
 					wrapper->next_rid = cur_router->router_id;
-				}
+				}				
 
 				/* set that this is directly connected to us */
 				if (our_rid == r->router_id) {
@@ -264,10 +269,12 @@ void add_route_wrappers(uint32_t our_rid, node** head, pwospf_router* r) {
 			if (!cur_router->prev_router) {
 				new_route->next_rid = i->router_id;
 			} else {
-				while (cur_router->prev_router->distance != 0) {
+				/* Use another way to determine the root of a minimum spanning tree */
+				while (cur_router->prev_router->router_id != our_rid) {
 					cur_router = cur_router->prev_router;
 				}
 				new_route->next_rid = cur_router->router_id;
+				//printf("or_dijkstra.c: wrapper->next_rid: %u current_router: %u prev_router %u \n", new_route->next_rid, cur_router->router_id, cur_router->prev_router->router_id);
 			}
 
 			/* set that this is directly connected to us */
