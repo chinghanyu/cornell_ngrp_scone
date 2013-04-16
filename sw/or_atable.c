@@ -260,7 +260,7 @@ int compute_atable(router_state* rs) {
 	node* n = rs->rtable;
 	
 	
-	double delta = 10;
+	double delta = 30.0;
 	double eta = 1.0;
 	
 	struct in_addr next_hop_ip[4];
@@ -338,7 +338,7 @@ int compute_atable(router_state* rs) {
 					alpha[1] = MIN(1, MAX(0, ae->alpha[1] - ae->alpha[1] * delta / eta / rate));
 					alpha[2] = MIN(1, MAX(0, ae->alpha[2] - ae->alpha[2] * delta / eta / rate));
 					alpha[3] = MIN(1, MAX(0, ae->alpha[3] - ae->alpha[3] * delta / eta / rate));
-					alpha[0] = 1 - ae->alpha[1] - ae->alpha[2] - ae->alpha[3];
+					alpha[0] = 1 - alpha[1] - alpha[2] - alpha[3];
 				} else if (!strcmp(iface, "eth1")) {
 					next_hop_ip[0] = ae->next_hop_ip[0];
 					next_hop_ip[2] = ae->next_hop_ip[2];
@@ -347,7 +347,7 @@ int compute_atable(router_state* rs) {
 					alpha[0] = MIN(1, MAX(0, ae->alpha[0] - ae->alpha[0] * delta / eta / rate));
 					alpha[2] = MIN(1, MAX(0, ae->alpha[2] - ae->alpha[2] * delta / eta / rate));
 					alpha[3] = MIN(1, MAX(0, ae->alpha[3] - ae->alpha[3] * delta / eta / rate));
-					alpha[1] = 1 - ae->alpha[0] - ae->alpha[2] - ae->alpha[3];
+					alpha[1] = 1 - alpha[0] - alpha[2] - alpha[3];
 				} else if (!strcmp(iface, "eth2")) {
 					next_hop_ip[0] = ae->next_hop_ip[0];
 					next_hop_ip[1] = ae->next_hop_ip[1];
@@ -356,7 +356,7 @@ int compute_atable(router_state* rs) {
 					alpha[0] = MIN(1, MAX(0, ae->alpha[0] - ae->alpha[0] * delta / eta / rate));
 					alpha[1] = MIN(1, MAX(0, ae->alpha[1] - ae->alpha[1] * delta / eta / rate));
 					alpha[3] = MIN(1, MAX(0, ae->alpha[3] - ae->alpha[3] * delta / eta / rate));
-					alpha[2] = 1 - ae->alpha[0] - ae->alpha[1] - ae->alpha[3];
+					alpha[2] = 1 - alpha[0] - alpha[1] - alpha[3];
 				} else if (!strcmp(iface, "eth3")) {
 					next_hop_ip[0] = ae->next_hop_ip[0];
 					next_hop_ip[1] = ae->next_hop_ip[1];
@@ -365,7 +365,7 @@ int compute_atable(router_state* rs) {
 					alpha[0] = MIN(1, MAX(0, ae->alpha[0] - ae->alpha[0] * delta / eta / rate));
 					alpha[1] = MIN(1, MAX(0, ae->alpha[1] - ae->alpha[1] * delta / eta / rate));
 					alpha[2] = MIN(1, MAX(0, ae->alpha[2] - ae->alpha[2] * delta / eta / rate));
-					alpha[3] = 1 - ae->alpha[0] - ae->alpha[1] - ae->alpha[2];
+					alpha[3] = 1 - alpha[0] - alpha[1] - alpha[2];
 				}
 				
 				update_atable_entry(&(re->ip), &(re->mask), next_hop_ip, alpha, p);
