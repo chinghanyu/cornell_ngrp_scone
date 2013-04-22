@@ -127,7 +127,7 @@ typedef struct pwospf_hdr pwospf_hdr;
 #define PWOSPF_HELLO_TIP 0xe0000005
 
 #define PWOSPF_NEIGHBOR_TIMEOUT 5
-#define PWOSPF_LSUINT 1
+#define PWOSPF_LSUINT 250
 #define PWOSPF_HELLO_PADDING 0x0
 
 struct pwospf_hello_hdr
@@ -436,7 +436,7 @@ typedef struct nbr_router nbr_router;
  	uint32_t area_id;
 // 	uint16_t lsu_int;
  	uint16_t seq;
-	time_t last_update;
+	struct timeval last_update;
 	uint32_t distance;
 	unsigned int shortest_path_found:1;
 	node* interface_list;

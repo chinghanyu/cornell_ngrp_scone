@@ -438,7 +438,7 @@ void init_router_list(struct sr_instance* sr){
 	our_router->seq = 0;
 	our_router->distance = 0;
 	our_router->shortest_path_found = 0;
-	time(&our_router->last_update);
+	gettimeofday(&our_router->last_update, NULL);
 
 
 	/* insert our_router in the pwospf router list */

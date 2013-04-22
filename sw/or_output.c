@@ -319,7 +319,7 @@ void sprint_pwospf_router_list(router_state *rs, char **buf, int *len) {
 		char last_update[47];
 		bzero(last_update, 47);
 		time(&now);
-		diff = difftime(now, rle->last_update);
+		diff = difftime(now, (time_t)(rle->last_update.tv_sec));
 		if( (int)diff > (rs->pwospf_lsu_interval * 3) ) {
 			snprintf(last_update, 47, "%s", "EXP");
 		} else {

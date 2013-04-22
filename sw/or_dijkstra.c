@@ -87,7 +87,7 @@ node* compute_rtable(uint32_t our_router_id, node* pwospf_router_list, node* if_
 
 	/* now have the shortest path to each router, build the temporary route table */
 	node* route_wrapper_list = build_route_wrapper_list(our_router_id, pwospf_router_list);
-	print_wrapper_list(route_wrapper_list);
+	//print_wrapper_list(route_wrapper_list);
 
 	/* we now have a list of wrapped proper entries, but they need specific interface info,
 	 * and need to lose the wrapping
@@ -381,27 +381,37 @@ void* dijkstra_thread(void* arg) {
 	struct timespec wake_up_time;
 	struct timeval now;
 	int result = 0;
+	int dijkstra_counter =0;
 
 	pthread_mutex_lock(rs->dijkstra_mutex);
 	while (1) {
 		/* Determine the time when to wake up next */
 		gettimeofday(&now, NULL);
 		wake_up_time.tv_sec = now.tv_sec + 1;
-		wake_up_time.tv_nsec = now.tv_usec + 1000;
-
+		wake_up_time.tv_nsec = now.tv_usec * 1000 + 250000;
+		//printf("pre result timenow:%d\n", now.tv_usec);
 		result = pthread_cond_timedwait(rs->dijkstra_cond, rs->dijkstra_mutex, &wake_up_time);
 		
-//		gettimeofday(&now, NULL);
-//		printf("or_dijkstra.c: result = %d at %d\n", result, now.tv_sec);
+		gettimeofday(&now, NULL);
 
+		//printf("post result timenow:%d\n", now.tv_usec);
+		//printf("or_dijkstra.c: result = %d at %d\n", result, now.tv_sec);
+		//printf("**dijkstra before timeout\n");
+		
 		/* if we timed out, and the data is not dirty, go back to sleep */
 		if (result == ETIMEDOUT) {
+			//printf("****dijkstra timeout\n");
+			//printf("timenow:%d\n", now.tv_usec);
+			//fprintf(stderr, "TIMEOUT: %d %d: %s *********************\n", now.tv_sec, now.tv_usec, __FUNCTION__);		
+
 			if (!rs->dijkstra_dirty) {
+				//printf("******dijkstra dirty + timeout\n");
 				continue;
 			}
 		}
+		//printf("flag\n");
 		rs->dijkstra_dirty = 0;
-
+		//fprintf(stderr, "CORRECT: %d %d: %s *********************\n", now.tv_sec, now.tv_usec, __FUNCTION__);
 		lock_if_list_rd(rs);
 		lock_rtable_wr(rs);
 		lock_mutex_pwospf_router_list(rs);
@@ -427,6 +437,7 @@ void* dijkstra_thread(void* arg) {
 		}
 
 		/* run dijkstra */
+		dijkstra_counter += 1;
 		node* dijkstra_rtable = compute_rtable(rs->router_id, rs->pwospf_router_list, rs->if_list);
 
 		/* patch our list on to the end of the rtable */
@@ -448,9 +459,10 @@ void* dijkstra_thread(void* arg) {
 		trigger_rtable_modified(rs);
 		char* rtable_printout;
 		int len;
-		printf("---RTABLE AFTER DIJKSTRA---\n");
+		printf("time:%d ----- Dijkstra Number: %d\n", now.tv_sec, dijkstra_counter);
+		//printf("---RTABLE AFTER DIJKSTRA---\n");
 		sprint_rtable(rs, &rtable_printout, &len);
-		printf("%s\n", rtable_printout);
+		//printf("%s\n", rtable_printout);
 		free(rtable_printout);
 
 		/* compute alpha here */
@@ -544,7 +556,7 @@ void* dijkstra_thread(void* arg) {
 		test_alpha[3] = 0.25;
 		
 		add_atable_entry(&test_ip, &test_mask, test_alpha, rs);
-*/
+*/		
 		sprint_atable(rs);
 		unlock_atable(rs);
 
@@ -552,6 +564,8 @@ void* dijkstra_thread(void* arg) {
 		unlock_mutex_pwospf_router_list(rs);
 		unlock_rtable(rs);
 		unlock_if_list(rs);
+		
+		//pthread_mutex_unlock(rs->dijkstra_mutex);
 
 	}
 	pthread_mutex_unlock(rs->dijkstra_mutex);
@@ -563,4 +577,8 @@ void dijkstra_trigger(router_state* rs) {
 	/* no lock on this object, worst case it takes an extra second to run */
 	rs->dijkstra_dirty = 1;
 	pthread_cond_signal(rs->dijkstra_cond);
+	struct timeval now;
+	gettimeofday(&now, NULL);
+	fprintf(stderr, "%d %d: %s *********************\n", now.tv_sec, now.tv_usec, __FUNCTION__);
+	//printf("dijkstra_trigger called -- signal unblocked\n");
 }

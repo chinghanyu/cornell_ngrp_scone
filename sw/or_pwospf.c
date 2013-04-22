@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <arpa/inet.h>
+#include <time.h>
 
 #include "or_main.h"
 #include "or_data_types.h"
@@ -20,6 +21,11 @@
 #include "or_ip.h"
 #include "or_dijkstra.h"
 #include "or_arp.h"
+
+int diff_ms(struct timeval t1, struct timeval t2)
+{
+    return ((((t1.tv_sec - t2.tv_sec) * 1000) + (t1.tv_usec - t2.tv_usec)/1000));
+}
 
 void process_pwospf_packet(struct sr_instance* sr, const uint8_t * packet, unsigned int len, const char* interface) {
 
@@ -147,6 +153,7 @@ void process_pwospf_hello_packet(struct sr_instance* sr, const uint8_t * packet,
 
 	/* Build packets to inform all our neighbors */
 	if (update_neighbors == 1) {
+		fprintf(stderr, "%s ***********************\n", __FUNCTION__);
 		propagate_pwospf_changes(rs, NULL);
 	}
 
@@ -218,6 +225,7 @@ void broadcast_pwospf_hello_packet(struct sr_instance* sr) {
 
 		/* flood with lsu updates */
 		lock_mutex_pwospf_router_list(rs);
+		fprintf(stderr, "%s ***********************\n", __FUNCTION__);
 		propagate_pwospf_changes(rs, NULL);
 		unlock_mutex_pwospf_router_list(rs);
 
@@ -311,7 +319,7 @@ int determine_timedout_interface(router_state *rs, iface_entry *iface) {
 
 
 void process_pwospf_lsu_packet(struct sr_instance* sr, const uint8_t * packet, unsigned int len, const char* interface) {
-
+	//printf("process lsu packet called\n");
 	assert(sr);
 	assert(packet);
 
@@ -326,7 +334,6 @@ void process_pwospf_lsu_packet(struct sr_instance* sr, const uint8_t * packet, u
 	int bcast_incoming_lsu_packet = 0;
 	int rebroadcast_packet = 0;
 
-	/* If our router id == the lsu update id, drop pckt */
 	if(rs->router_id == pwospf->pwospf_rid) {
 		return;
 	}
@@ -346,7 +353,7 @@ void process_pwospf_lsu_packet(struct sr_instance* sr, const uint8_t * packet, u
 		/* If the seq # match, drop packet, ow update this router's info */
 		if( (router->seq != ntohs(lsu->pwospf_seq)) && ( ntohs(lsu->pwospf_seq) > router->seq  ) ) {
 			rebroadcast_packet = 1;
-			time(&(router->last_update));
+			gettimeofday(&(router->last_update), NULL);
 			router->seq = htons(lsu->pwospf_seq);
 
 			/* If contents differ from last LSU update, update our neighbors */
@@ -389,6 +396,9 @@ void process_pwospf_lsu_packet(struct sr_instance* sr, const uint8_t * packet, u
 		free(bcasted_pwospf_packet);
 		bcast_incoming_lsu_packet = 1;
 	}
+		struct timeval now;
+		gettimeofday(&now, NULL);
+		fprintf(stderr, "%d %d : %s ***********************\n", now.tv_sec, now.tv_usec, __FUNCTION__);
 
 	/* lsu packet has changed our known world, build data to inform the other 3 neighbors */
 	if(update_neighbors == 1) {
@@ -419,7 +429,7 @@ void add_new_router_neighbor(router_state *rs, const uint8_t *packet, unsigned i
 	new_router->router_id = pwospf->pwospf_rid;
 	new_router->area_id = ntohl(pwospf->pwospf_aid);
 	new_router->seq = ntohs(lsu->pwospf_seq);
-	time(&new_router->last_update);
+	gettimeofday(&new_router->last_update, NULL);
 	new_router->distance = 0;
 	new_router->shortest_path_found = 0;
 
@@ -816,7 +826,7 @@ void start_lsu_bcast_flood(router_state *rs, char *exclude_this_interface) {
 
 	/* update the last sent flood time */
 	pwospf_router *our_router = get_router_by_rid(rs->router_id, rs->pwospf_router_list);
-	time(&(our_router->last_update));
+	gettimeofday(&(our_router->last_update), NULL);
 }
 
 
@@ -861,7 +871,7 @@ void construct_pwospf_lsu_packet(router_state *rs, uint8_t **pwospf_packet, unsi
 
 
 	/* update our router entry */
-	time(&our_router->last_update);
+	gettimeofday(&our_router->last_update, NULL);
 	our_router->seq += 1;
 
 }
@@ -1153,33 +1163,39 @@ void *pwospf_lsu_thread(void *param) {
 	struct sr_instance *sr = (struct sr_instance *)param;
 	router_state *rs = get_router_state(sr);
 
-	time_t now;
+	struct timeval now;
 	int diff;
 
-	sleep(5);
+	usleep(100000);
 	while(1) {
 
 		lock_mutex_pwospf_router_list(rs);
 		pwospf_router *our_router = get_router_by_rid(rs->router_id, rs->pwospf_router_list);
 		unlock_mutex_pwospf_router_list(rs);
-		time(&now);
+		gettimeofday(&now, NULL);
+		
 		if (our_router) {
-			diff = (int)difftime(now, our_router->last_update);
-
+      
+			//diff = (int)difftime(now, our_router->last_update);
+      		diff = diff_ms(now, our_router->last_update);
+      		//fprintf(stderr, "difftime = %d\n", diff);
 			/* send an lsu update if we haven't done so */
 			if(diff > (rs->pwospf_lsu_interval)) {
-				printf("or_pwospf.c: pwospf_lsu_thread wakes up at time %d and diff = %d\n", now, diff);
+				//printf("or_pwospf.c: pwospf_lsu_thread wakes up at time %d and diff = %d\n", now, diff);
 				lock_mutex_pwospf_router_list(rs);
 				start_lsu_bcast_flood(rs, NULL);
 				unlock_mutex_pwospf_router_list(rs);
 
 				/* signal the lsu bcast thread to send the packets */
 				pthread_cond_signal(rs->pwospf_lsu_bcast_cond);
+				struct timeval now;
+				gettimeofday(&now, NULL);
+				fprintf(stderr, "%d %d : %s ***********************\n", now.tv_sec, now.tv_usec, __FUNCTION__);
 			}
 		}
 
 		/* poll every 1 second */
-		sleep(1);
+		usleep(5000);
 	}
 
 }
@@ -1212,10 +1228,11 @@ void *pwospf_lsu_timeout_thread(void *param) {
 			}
 
 			time(&now);
-			diff = (int)difftime(now, rl_entry->last_update);
+			diff = (int)difftime(now, (time_t)(rl_entry->last_update.tv_sec));
 
 			/* if(diff > 3 * LSUINT) */
-			if (diff > (rs->pwospf_lsu_interval * 3)) {
+			//if (diff > (rs->pwospf_lsu_interval * 3)) {
+			if(diff > 10) {
 				char addr[16];
 				inet_ntop(AF_INET, &(rl_entry->router_id), addr, 16);
 				//printf("PWOSPF ROUTER LENGTH: %u\n", node_length(rs->pwospf_router_list));
@@ -1240,6 +1257,7 @@ void *pwospf_lsu_timeout_thread(void *param) {
 		/* build lsu flood information for all our neighbors */
 		if(timeout_occured == 1) {
 			//printf("PWOSPF ROUTER LENGTH: %u\n", node_length(rs->pwospf_router_list));
+			fprintf(stderr, "%s ***********************\n", __FUNCTION__);
 			propagate_pwospf_changes(rs, NULL);
 		}
 
@@ -1250,6 +1268,7 @@ void *pwospf_lsu_timeout_thread(void *param) {
 		/* signal thread to send the lsu flood */
 		if(timeout_occured == 1) {
 			pthread_cond_signal(rs->pwospf_lsu_bcast_cond);
+			fprintf(stderr, "%s ***********************\n", __FUNCTION__);
 		}
 
 
@@ -1343,6 +1362,8 @@ void cli_pwospf_send_lsu(router_state *rs, cli_request *req) {
 
 	/* signal the lsu bcast thread to send the packets */
 	pthread_cond_signal(rs->pwospf_lsu_bcast_cond);
+	fprintf(stderr, "%s ***********************\n", __FUNCTION__);
+	
 
 	char *usage = "LSU packet sent on each interface (up or down)\n";
 	send_to_socket(req->sockfd, usage, strlen(usage));
