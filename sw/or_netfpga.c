@@ -459,7 +459,7 @@ void* netfpga_stats(void* arg) {
 		//printf("======================================================================================\n");
 		//printf("or_netfpga.c: NetFPGA end recording its stats.\n");
 		//printf("or_netfpga.c: There are %d interfaces in this router.\n", j);
-		usleep(50000);
+		usleep(100000);
 	}
 
 	return NULL;

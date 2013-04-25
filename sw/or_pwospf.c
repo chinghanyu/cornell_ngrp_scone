@@ -165,6 +165,7 @@ void process_pwospf_hello_packet(struct sr_instance* sr, const uint8_t * packet,
 	/* Signal thread to send new information to all our neigbors */
 	if (update_neighbors == 1) {
 		pthread_cond_signal(rs->pwospf_lsu_bcast_cond);
+		fprintf(stderr, "%s ***********************\n",__FUNCTION__);
 	}
 
 }
@@ -231,6 +232,7 @@ void broadcast_pwospf_hello_packet(struct sr_instance* sr) {
 
 		/*send it to every neighbor */
 		pthread_cond_signal(rs->pwospf_lsu_bcast_cond);
+		fprintf(stderr, "%s ***********************\n", __FUNCTION__);
 	}
 
 	free(packet);
@@ -412,7 +414,11 @@ void process_pwospf_lsu_packet(struct sr_instance* sr, const uint8_t * packet, u
 
 	/* updated neighbor, signal to send the constructed lsu flood */
 	if( (update_neighbors == 1)  || (bcast_incoming_lsu_packet == 1) ) {
+		//struct timeval now;
+		//gettimeofday(&now, NULL);
+		//fprintf(stderr, "%d %d : -relay- %s ***********************\n", now.tv_sec, now.tv_usec, __FUNCTION__);
 		pthread_cond_signal(rs->pwospf_lsu_bcast_cond);
+		
 	}
 }
 
@@ -636,7 +642,7 @@ int populate_pwospf_router_interface_list(pwospf_router *router, uint8_t *packet
 			new_iface_list_entry->is_active = 0;
 			new_iface_list_entry->rx_rate = next_packet_adv->ngrp_rx_rate;
 			new_iface_list_entry->tx_rate = next_packet_adv->ngrp_tx_rate;
-			printf("or_pwospf.c: router_id = %d, rx_rate = %d, tx_rate = %d\n", next_packet_adv->pwospf_rid, next_packet_adv->ngrp_rx_rate, next_packet_adv->ngrp_tx_rate);
+			//printf("or_pwospf.c: router_id = %d, rx_rate = %d, tx_rate = %d\n", next_packet_adv->pwospf_rid, next_packet_adv->ngrp_rx_rate, next_packet_adv->ngrp_tx_rate);
 
 
 			/* insert the new adv into the list */
@@ -697,7 +703,7 @@ int populate_pwospf_router_interface_list(pwospf_router *router, uint8_t *packet
 				new_iface_list_entry->is_active = 0;
 				new_iface_list_entry->rx_rate = next_packet_adv->ngrp_rx_rate;
 				new_iface_list_entry->tx_rate = next_packet_adv->ngrp_tx_rate;
-				printf("or_pwospf.c: router_id = %d, rx_rate = %d, tx_rate = %d\n", next_packet_adv->pwospf_rid, next_packet_adv->ngrp_rx_rate, next_packet_adv->ngrp_tx_rate);
+				//printf("or_pwospf.c: router_id = %d, rx_rate = %d, tx_rate = %d\n", next_packet_adv->pwospf_rid, next_packet_adv->ngrp_rx_rate, next_packet_adv->ngrp_tx_rate);
 
 				/* insert the new adv into the list */
 				new_iface_list_node->data = (void *)new_iface_list_entry;
@@ -1190,7 +1196,11 @@ void *pwospf_lsu_thread(void *param) {
 				pthread_cond_signal(rs->pwospf_lsu_bcast_cond);
 				struct timeval now;
 				gettimeofday(&now, NULL);
-				fprintf(stderr, "%d %d : %s ***********************\n", now.tv_sec, now.tv_usec, __FUNCTION__);
+				fprintf(stderr, "%d %d : -interval- %s ***********************\n", now.tv_sec, now.tv_usec, __FUNCTION__);
+				//usleep(50000);
+				//propagate_pwospf_changes(rs, NULL);
+				//usleep(250000);
+				//propagate_pwospf_changes(rs, NULL);
 			}
 		}
 
@@ -1288,7 +1298,11 @@ void *pwospf_lsu_bcast_thread(void *param) {
 	while(1) {
 		lock_mutex_pwospf_lsu_bcast(rs);
 		pthread_cond_wait(rs->pwospf_lsu_bcast_cond, rs->pwospf_lsu_bcast_mutex);
-
+		
+		struct timeval now;
+		gettimeofday(&now, NULL);
+		fprintf(stderr, "%d %d : %s ***********************\n", now.tv_sec, now.tv_usec, __FUNCTION__);
+		
 		/* get lsu packet queue */
 		node *lsu_queue = 0;
 
