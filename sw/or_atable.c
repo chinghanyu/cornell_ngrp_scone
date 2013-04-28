@@ -350,46 +350,62 @@ int compute_atable(router_state* rs) {
 					next_hop_ip[2] = ae->next_hop_ip[2];
 					next_hop_ip[3] = ae->next_hop_ip[3];
 					next_hop_ip[0] = re->gw;
-					beta[1] = ae->beta[1];
-					beta[2] = ae->beta[2];
-					beta[3] = ae->beta[3];
+					alpha[1] = 0;
+					alpha[2] = 0;
+					alpha[3] = 0;
+					alpha[0] = 1;
+					beta[1] = 0;
+					beta[2] = 0;
+					beta[3] = 0;
 					beta[0] = 1;
 				} else if (!strcmp(iface, "eth1")) {
 					next_hop_ip[0] = ae->next_hop_ip[0];
 					next_hop_ip[2] = ae->next_hop_ip[2];
 					next_hop_ip[3] = ae->next_hop_ip[3];
 					next_hop_ip[1] = re->gw;
-					beta[0] = ae->beta[0];
-					beta[2] = ae->beta[2];
-					beta[3] = ae->beta[3];
+					alpha[1] = 1;
+					alpha[2] = 0;
+					alpha[3] = 0;
+					alpha[0] = 0;
 					beta[1] = 1;
+					beta[2] = 0;
+					beta[3] = 0;
+					beta[0] = 0;
 				} else if (!strcmp(iface, "eth2")) {
 					next_hop_ip[0] = ae->next_hop_ip[0];
 					next_hop_ip[1] = ae->next_hop_ip[1];
 					next_hop_ip[3] = ae->next_hop_ip[3];
 					next_hop_ip[2] = re->gw;
-					beta[0] = ae->beta[0];
-					beta[1] = ae->beta[1];
-					beta[3] = ae->beta[3];
+					alpha[1] = 0;
+					alpha[2] = 1;
+					alpha[3] = 0;
+					alpha[0] = 0;
+					beta[1] = 0;
 					beta[2] = 1;
+					beta[3] = 0;
+					beta[0] = 0;
 				} else if (!strcmp(iface, "eth3")) {
 					next_hop_ip[0] = ae->next_hop_ip[0];
 					next_hop_ip[1] = ae->next_hop_ip[1];
 					next_hop_ip[2] = ae->next_hop_ip[2];
 					next_hop_ip[3] = re->gw;
-					beta[0] = ae->beta[0];
-					beta[1] = ae->beta[1];
-					beta[2] = ae->beta[2];
+					alpha[1] = 0;
+					alpha[2] = 0;
+					alpha[3] = 1;
+					alpha[0] = 0;
+					beta[1] = 0;
+					beta[2] = 0;
 					beta[3] = 1;
+					beta[0] = 0;
 				}
 				
 				m = beta[0] + beta[1] + beta[2] + beta[3];
-				
+				/*
 				alpha[0] = (double)beta[0] / m;
 				alpha[1] = (double)beta[1] / m;
 				alpha[2] = (double)beta[2] / m;
 				alpha[3] = (double)beta[3] / m;
-				
+				*/
 				update_atable_entry(&(re->ip), &(re->mask), next_hop_ip, alpha, beta, p);
 				
 			}
