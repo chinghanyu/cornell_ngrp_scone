@@ -105,7 +105,7 @@ node* get_atable_entry(struct in_addr* destination, struct in_addr* mask, router
 /* !! NOT THREAD SAFE !!
  * LOCK RS FOR WRITING BEFORE CALLING THE FUNCTION
  */
-int add_atable_entry(struct in_addr* destination, struct in_addr* mask, struct in_addr* next_hop_ip, double* alpha, router_state* rs) {
+int add_atable_entry(struct in_addr* destination, struct in_addr* mask, struct in_addr* next_hop_ip, double* alpha, unsigned int* beta, router_state* rs) {
 
 	/* Logic:
 	 *	 Add a new atable entry. If it exists, update it, otherwise insert a new
@@ -116,6 +116,7 @@ int add_atable_entry(struct in_addr* destination, struct in_addr* mask, struct i
 	assert(mask);
 	assert(next_hop_ip);
 	assert(alpha);
+	assert(beta);
 	assert(rs);
 	
 	node* n = get_atable_entry(destination, mask, rs);
@@ -127,7 +128,7 @@ int add_atable_entry(struct in_addr* destination, struct in_addr* mask, struct i
 		n = node_create();
 		n->data = (atable_entry*)calloc(1, sizeof(atable_entry));
 		
-		update_atable_entry(destination, mask, next_hop_ip, alpha, n);
+		update_atable_entry(destination, mask, next_hop_ip, alpha, beta, n);
 
 		if (rs->atable == NULL) {
 		
@@ -141,7 +142,7 @@ int add_atable_entry(struct in_addr* destination, struct in_addr* mask, struct i
 		
 	} else {
 	
-		update_atable_entry(destination, mask, next_hop_ip, alpha, n);
+		update_atable_entry(destination, mask, next_hop_ip, alpha, beta, n);
 		
 	}
 	
@@ -214,7 +215,7 @@ int sprint_atable_entry(node* n, unsigned int index) {
 /* !! NOT THREAD SAFE !!
  * LOCK RS FOR WRITING BEFORE CALLING THE FUNCTION
  */
-int update_atable_entry(struct in_addr* destination, struct in_addr* mask, struct in_addr* next_hop_ip, double* alpha, node* n) {
+int update_atable_entry(struct in_addr* destination, struct in_addr* mask, struct in_addr* next_hop_ip, double* alpha, unsigned int* beta, node* n) {
 
 	/* Logic:
 	 *   Modify the content pointed by the given node pointer.
@@ -222,6 +223,7 @@ int update_atable_entry(struct in_addr* destination, struct in_addr* mask, struc
 	assert(destination);
 	assert(mask);
 	assert(alpha);
+	assert(beta);
 	assert(n);
 	
 	atable_entry* ae = (atable_entry*)n->data;
@@ -238,6 +240,10 @@ int update_atable_entry(struct in_addr* destination, struct in_addr* mask, struc
 	ae->alpha[1] = alpha[1];
 	ae->alpha[2] = alpha[2];
 	ae->alpha[3] = alpha[3];
+	ae->beta[0] = beta[0];
+	ae->beta[1] = beta[1];
+	ae->beta[2] = beta[2];
+	ae->beta[3] = beta[3];
 	
 	return 1;
 
@@ -258,13 +264,14 @@ int compute_atable(router_state* rs) {
 
 	assert(rs);
 	node* n = rs->rtable;
-	
-	
+		
 	double delta = 30.0;
 	double eta = 1.0;
 	
 	struct in_addr next_hop_ip[4];
 	double alpha[4];
+	unsigned int beta[4];
+	unsigned int m = 0;
 	
 	node* p = NULL;	// for atable linked list
 	
@@ -302,22 +309,30 @@ int compute_atable(router_state* rs) {
 				alpha[1] = 0;
 				alpha[2] = 0;
 				alpha[3] = 0;
+				beta[0] = 0;
+				beta[1] = 0;
+				beta[2] = 0;
+				beta[3] = 0;
 				
 				if (!strcmp(iface, "eth0")) {
 					next_hop_ip[0] = re->gw;
 					alpha[0] = 1;
+					beta[0] = 1;
 				} else if (!strcmp(iface, "eth1")) {
 					next_hop_ip[1] = re->gw;
 					alpha[1] = 1;
+					beta[1] = 1;
 				} else if (!strcmp(iface, "eth2")) {
 					next_hop_ip[2] = re->gw;
 					alpha[2] = 1;
+					beta[2] = 1;
 				} else if (!strcmp(iface, "eth3")) {
 					next_hop_ip[3] = re->gw;
 					alpha[3] = 1;
+					beta[3] = 1;
 				}
 
-				add_atable_entry(&(re->ip), &(re->mask), next_hop_ip, alpha, rs);
+				add_atable_entry(&(re->ip), &(re->mask), next_hop_ip, alpha, beta, rs);
 				
 			} else {
 			
@@ -335,40 +350,47 @@ int compute_atable(router_state* rs) {
 					next_hop_ip[2] = ae->next_hop_ip[2];
 					next_hop_ip[3] = ae->next_hop_ip[3];
 					next_hop_ip[0] = re->gw;
-					alpha[1] = MIN(1, MAX(0, ae->alpha[1] - ae->alpha[1] * delta / eta / rate));
-					alpha[2] = MIN(1, MAX(0, ae->alpha[2] - ae->alpha[2] * delta / eta / rate));
-					alpha[3] = MIN(1, MAX(0, ae->alpha[3] - ae->alpha[3] * delta / eta / rate));
-					alpha[0] = 1 - alpha[1] - alpha[2] - alpha[3];
+					beta[1] = ae->beta[1];
+					beta[2] = ae->beta[2];
+					beta[3] = ae->beta[3];
+					beta[0] = 1;
 				} else if (!strcmp(iface, "eth1")) {
 					next_hop_ip[0] = ae->next_hop_ip[0];
 					next_hop_ip[2] = ae->next_hop_ip[2];
 					next_hop_ip[3] = ae->next_hop_ip[3];
 					next_hop_ip[1] = re->gw;
-					alpha[0] = MIN(1, MAX(0, ae->alpha[0] - ae->alpha[0] * delta / eta / rate));
-					alpha[2] = MIN(1, MAX(0, ae->alpha[2] - ae->alpha[2] * delta / eta / rate));
-					alpha[3] = MIN(1, MAX(0, ae->alpha[3] - ae->alpha[3] * delta / eta / rate));
-					alpha[1] = 1 - alpha[0] - alpha[2] - alpha[3];
+					beta[0] = ae->beta[0];
+					beta[2] = ae->beta[2];
+					beta[3] = ae->beta[3];
+					beta[1] = 1;
 				} else if (!strcmp(iface, "eth2")) {
 					next_hop_ip[0] = ae->next_hop_ip[0];
 					next_hop_ip[1] = ae->next_hop_ip[1];
 					next_hop_ip[3] = ae->next_hop_ip[3];
 					next_hop_ip[2] = re->gw;
-					alpha[0] = MIN(1, MAX(0, ae->alpha[0] - ae->alpha[0] * delta / eta / rate));
-					alpha[1] = MIN(1, MAX(0, ae->alpha[1] - ae->alpha[1] * delta / eta / rate));
-					alpha[3] = MIN(1, MAX(0, ae->alpha[3] - ae->alpha[3] * delta / eta / rate));
-					alpha[2] = 1 - alpha[0] - alpha[1] - alpha[3];
+					beta[0] = ae->beta[0];
+					beta[1] = ae->beta[1];
+					beta[3] = ae->beta[3];
+					beta[2] = 1;
 				} else if (!strcmp(iface, "eth3")) {
 					next_hop_ip[0] = ae->next_hop_ip[0];
 					next_hop_ip[1] = ae->next_hop_ip[1];
 					next_hop_ip[2] = ae->next_hop_ip[2];
 					next_hop_ip[3] = re->gw;
-					alpha[0] = MIN(1, MAX(0, ae->alpha[0] - ae->alpha[0] * delta / eta / rate));
-					alpha[1] = MIN(1, MAX(0, ae->alpha[1] - ae->alpha[1] * delta / eta / rate));
-					alpha[2] = MIN(1, MAX(0, ae->alpha[2] - ae->alpha[2] * delta / eta / rate));
-					alpha[3] = 1 - alpha[0] - alpha[1] - alpha[2];
+					beta[0] = ae->beta[0];
+					beta[1] = ae->beta[1];
+					beta[2] = ae->beta[2];
+					beta[3] = 1;
 				}
 				
-				update_atable_entry(&(re->ip), &(re->mask), next_hop_ip, alpha, p);
+				m = beta[0] + beta[1] + beta[2] + beta[3];
+				
+				alpha[0] = (double)beta[0] / m;
+				alpha[1] = (double)beta[1] / m;
+				alpha[2] = (double)beta[2] / m;
+				alpha[3] = (double)beta[3] / m;
+				
+				update_atable_entry(&(re->ip), &(re->mask), next_hop_ip, alpha, beta, p);
 				
 			}
 			
