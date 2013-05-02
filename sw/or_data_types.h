@@ -127,7 +127,7 @@ typedef struct pwospf_hdr pwospf_hdr;
 #define PWOSPF_HELLO_TIP 0xe0000005
 
 #define PWOSPF_NEIGHBOR_TIMEOUT 5
-#define PWOSPF_LSUINT 400
+#define PWOSPF_LSUINT 500
 #define PWOSPF_HELLO_PADDING 0x0
 
 struct pwospf_hello_hdr

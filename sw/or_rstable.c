@@ -282,7 +282,7 @@ void* rstable_thread(void* arg) {
 		
 		unlock_rstable(rs);
 		
-		usleep(500000);
+		usleep(900000);
 		
 	}
 	

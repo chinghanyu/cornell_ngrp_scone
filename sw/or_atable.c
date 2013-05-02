@@ -260,7 +260,7 @@ int compute_atable(router_state* rs) {
 	node* n = rs->rtable;
 	
 	
-	double delta = 30.0;
+	double delta = 20.0;
 	double eta = 1.0;
 	
 	struct in_addr next_hop_ip[4];
