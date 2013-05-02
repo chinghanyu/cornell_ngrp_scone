@@ -275,6 +275,13 @@ int compute_atable(router_state* rs) {
 	
 	node* p = NULL;	// for atable linked list
 	
+	struct in_addr destination_0, destination_1, destination_2, destination_3;
+
+	inet_pton(AF_INET, "192.168.101.1", &destination_0);
+	inet_pton(AF_INET, "192.168.1.2", &destination_1);
+	inet_pton(AF_INET, "192.168.3.1", &destination_2);
+	inet_pton(AF_INET, "192.168.4.1", &destination_3);
+	
 	if (!n)
 		printf("THERE IS NO ENTRY IN RTABLE\n");
 	
@@ -295,15 +302,14 @@ int compute_atable(router_state* rs) {
 			 * our current atable, we create a new entry and insert it into 
 			 * atable.
 			 */
-			 
 			 	//printf("or_atable.c: atable is emtpy\n");
 			 
 			 	/* allocate memory for a node and its data */
 				
-				next_hop_ip[0].s_addr = 0;
-				next_hop_ip[1].s_addr = 0;
-				next_hop_ip[2].s_addr = 0;
-				next_hop_ip[3].s_addr = 0;
+				next_hop_ip[0] = destination_0;
+				next_hop_ip[1] = destination_1;
+				next_hop_ip[2] = destination_2;
+				next_hop_ip[3] = destination_3;
 				
 				alpha[0] = 0;
 				alpha[1] = 0;
@@ -315,19 +321,19 @@ int compute_atable(router_state* rs) {
 				beta[3] = 0;
 				
 				if (!strcmp(iface, "eth0")) {
-					next_hop_ip[0] = re->gw;
+					next_hop_ip[0] = destination_0;
 					alpha[0] = 1;
 					beta[0] = 1;
 				} else if (!strcmp(iface, "eth1")) {
-					next_hop_ip[1] = re->gw;
+					next_hop_ip[1] = destination_1;
 					alpha[1] = 1;
 					beta[1] = 1;
 				} else if (!strcmp(iface, "eth2")) {
-					next_hop_ip[2] = re->gw;
+					next_hop_ip[2] = destination_2;
 					alpha[2] = 1;
 					beta[2] = 1;
 				} else if (!strcmp(iface, "eth3")) {
-					next_hop_ip[3] = re->gw;
+					next_hop_ip[3] = destination_3;
 					alpha[3] = 1;
 					beta[3] = 1;
 				}
@@ -344,59 +350,60 @@ int compute_atable(router_state* rs) {
 			 	lock_rstable_rd(rs);
 			 	double rate = MAX(1, get_rate(&(ae->ip), &(ae->mask), rs));
 			 	unlock_rstable(rs);
+			 	
+			 	next_hop_ip[0] = destination_0;
+				next_hop_ip[1] = destination_1;
+				next_hop_ip[2] = destination_2;
+				next_hop_ip[3] = destination_3;
 			
 				if (!strcmp(iface, "eth0")) {
-					next_hop_ip[1] = ae->next_hop_ip[1];
-					next_hop_ip[2] = ae->next_hop_ip[2];
-					next_hop_ip[3] = ae->next_hop_ip[3];
-					next_hop_ip[0] = re->gw;
-					alpha[1] = 0;
-					alpha[2] = 0;
-					alpha[3] = 0;
+			
 					alpha[0] = 1;
-					beta[1] = 0;
-					beta[2] = 0;
-					beta[3] = 0;
-					beta[0] = 1;
-				} else if (!strcmp(iface, "eth1")) {
-					next_hop_ip[0] = ae->next_hop_ip[0];
-					next_hop_ip[2] = ae->next_hop_ip[2];
-					next_hop_ip[3] = ae->next_hop_ip[3];
-					next_hop_ip[1] = re->gw;
-					alpha[1] = 1;
+					alpha[1] = 0;
 					alpha[2] = 0;
 					alpha[3] = 0;
-					alpha[0] = 0;
-					beta[1] = 1;
+					
+					beta[0] = 1;
+					beta[1] = 0;
 					beta[2] = 0;
 					beta[3] = 0;
-					beta[0] = 0;
-				} else if (!strcmp(iface, "eth2")) {
-					next_hop_ip[0] = ae->next_hop_ip[0];
-					next_hop_ip[1] = ae->next_hop_ip[1];
-					next_hop_ip[3] = ae->next_hop_ip[3];
-					next_hop_ip[2] = re->gw;
-					alpha[1] = 0;
-					alpha[2] = 1;
-					alpha[3] = 0;
+					
+				} else if (!strcmp(iface, "eth1")) {
+
 					alpha[0] = 0;
-					beta[1] = 0;
-					beta[2] = 1;
-					beta[3] = 0;
-					beta[0] = 0;
-				} else if (!strcmp(iface, "eth3")) {
-					next_hop_ip[0] = ae->next_hop_ip[0];
-					next_hop_ip[1] = ae->next_hop_ip[1];
-					next_hop_ip[2] = ae->next_hop_ip[2];
-					next_hop_ip[3] = re->gw;
 					alpha[1] = 0;
 					alpha[2] = 0;
 					alpha[3] = 1;
-					alpha[0] = 0;
+					
+					beta[0] = 0;
 					beta[1] = 0;
 					beta[2] = 0;
 					beta[3] = 1;
+					
+				} else if (!strcmp(iface, "eth2")) {
+
+					alpha[0] = 0;
+					alpha[1] = 0;
+					alpha[2] = 0;
+					alpha[3] = 1;					
+					
 					beta[0] = 0;
+					beta[1] = 0;
+					beta[2] = 0;
+					beta[3] = 1;
+					
+				} else if (!strcmp(iface, "eth3")) {
+
+					alpha[0] = 0;
+					alpha[1] = 0;
+					alpha[2] = 0;
+					alpha[3] = 1;
+					
+					beta[0] = 0;
+					beta[1] = 0;
+					beta[2] = 0;
+					beta[3] = 1;
+					
 				}
 				
 				m = beta[0] + beta[1] + beta[2] + beta[3];
