@@ -153,7 +153,7 @@ void process_pwospf_hello_packet(struct sr_instance* sr, const uint8_t * packet,
 
 	/* Build packets to inform all our neighbors */
 	if (update_neighbors == 1) {
-		fprintf(stderr, "%s ***********************\n", __FUNCTION__);
+		//fprintf(stderr, "%s ***********************\n", __FUNCTION__);
 		propagate_pwospf_changes(rs, NULL);
 	}
 
@@ -165,7 +165,7 @@ void process_pwospf_hello_packet(struct sr_instance* sr, const uint8_t * packet,
 	/* Signal thread to send new information to all our neigbors */
 	if (update_neighbors == 1) {
 		pthread_cond_signal(rs->pwospf_lsu_bcast_cond);
-		fprintf(stderr, "%s ***********************\n",__FUNCTION__);
+		//fprintf(stderr, "%s ***********************\n",__FUNCTION__);
 	}
 
 }
@@ -226,13 +226,13 @@ void broadcast_pwospf_hello_packet(struct sr_instance* sr) {
 
 		/* flood with lsu updates */
 		lock_mutex_pwospf_router_list(rs);
-		fprintf(stderr, "%s ***********************\n", __FUNCTION__);
+		//fprintf(stderr, "%s ***********************\n", __FUNCTION__);
 		propagate_pwospf_changes(rs, NULL);
 		unlock_mutex_pwospf_router_list(rs);
 
 		/*send it to every neighbor */
 		pthread_cond_signal(rs->pwospf_lsu_bcast_cond);
-		fprintf(stderr, "%s ***********************\n", __FUNCTION__);
+		//fprintf(stderr, "%s ***********************\n", __FUNCTION__);
 	}
 
 	free(packet);
@@ -400,7 +400,7 @@ void process_pwospf_lsu_packet(struct sr_instance* sr, const uint8_t * packet, u
 	}
 		struct timeval now;
 		gettimeofday(&now, NULL);
-		fprintf(stderr, "%d %d : %s ***********************\n", now.tv_sec, now.tv_usec, __FUNCTION__);
+		//fprintf(stderr, "%d %d : %s ***********************\n", now.tv_sec, now.tv_usec, __FUNCTION__);
 
 	/* lsu packet has changed our known world, build data to inform the other 3 neighbors */
 	if(update_neighbors == 1) {
@@ -1196,7 +1196,7 @@ void *pwospf_lsu_thread(void *param) {
 				pthread_cond_signal(rs->pwospf_lsu_bcast_cond);
 				struct timeval now;
 				gettimeofday(&now, NULL);
-				fprintf(stderr, "%d %d : -interval- %s ***********************\n", now.tv_sec, now.tv_usec, __FUNCTION__);
+				//fprintf(stderr, "%d %d : -interval- %s ***********************\n", now.tv_sec, now.tv_usec, __FUNCTION__);
 				//usleep(50000);
 				//propagate_pwospf_changes(rs, NULL);
 				//usleep(250000);
@@ -1267,7 +1267,7 @@ void *pwospf_lsu_timeout_thread(void *param) {
 		/* build lsu flood information for all our neighbors */
 		if(timeout_occured == 1) {
 			//printf("PWOSPF ROUTER LENGTH: %u\n", node_length(rs->pwospf_router_list));
-			fprintf(stderr, "%s ***********************\n", __FUNCTION__);
+			//fprintf(stderr, "%s ***********************\n", __FUNCTION__);
 			propagate_pwospf_changes(rs, NULL);
 		}
 
@@ -1278,7 +1278,7 @@ void *pwospf_lsu_timeout_thread(void *param) {
 		/* signal thread to send the lsu flood */
 		if(timeout_occured == 1) {
 			pthread_cond_signal(rs->pwospf_lsu_bcast_cond);
-			fprintf(stderr, "%s ***********************\n", __FUNCTION__);
+			//fprintf(stderr, "%s ***********************\n", __FUNCTION__);
 		}
 
 
@@ -1301,7 +1301,7 @@ void *pwospf_lsu_bcast_thread(void *param) {
 		
 		struct timeval now;
 		gettimeofday(&now, NULL);
-		fprintf(stderr, "%d %d : %s ***********************\n", now.tv_sec, now.tv_usec, __FUNCTION__);
+		//fprintf(stderr, "%d %d : %s ***********************\n", now.tv_sec, now.tv_usec, __FUNCTION__);
 		
 		/* get lsu packet queue */
 		node *lsu_queue = 0;
@@ -1376,7 +1376,7 @@ void cli_pwospf_send_lsu(router_state *rs, cli_request *req) {
 
 	/* signal the lsu bcast thread to send the packets */
 	pthread_cond_signal(rs->pwospf_lsu_bcast_cond);
-	fprintf(stderr, "%s ***********************\n", __FUNCTION__);
+	//fprintf(stderr, "%s ***********************\n", __FUNCTION__);
 	
 
 	char *usage = "LSU packet sent on each interface (up or down)\n";

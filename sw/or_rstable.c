@@ -278,11 +278,11 @@ void* rstable_thread(void* arg) {
 		lock_rstable_wr(rs);
 				
 		compute_rstable(rs);
-		sprint_rstable(rs);
+		//sprint_rstable(rs);
 		
 		unlock_rstable(rs);
 		
-		usleep(200000);
+		usleep(500000);
 		
 	}
 	

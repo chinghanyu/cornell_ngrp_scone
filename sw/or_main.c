@@ -758,7 +758,7 @@ void process_packet(struct sr_instance* sr, const uint8_t * packet, unsigned int
 			break;
 
 		case ETH_TYPE_ARP:
-			printf(" ** -> Received ARP packet of length %d\n", len);
+			//printf(" ** -> Received ARP packet of length %d\n", len);
 			process_arp_packet(sr, packet, len, interface);
 			break;
 
